@@ -12,12 +12,12 @@ class TrainingDataWrapper():
 	def __init__(self, args):
 
 		self.cell_id_mapping = util.load_mapping(args.cell2id, 'cell lines')
-		self.drug_id_mapping = util.load_mapping(args.drug2id, 'drugs')
+		# self.drug_id_mapping = util.load_mapping(args.drug2id, 'drugs')
 		self.gene_id_mapping = util.load_mapping(args.gene2id, 'genes')
 		self.cell_features = np.genfromtxt(args.genotype, delimiter = ',')
-		self.drug_features = np.genfromtxt(args.fingerprint, delimiter = ',')
+		# self.drug_features = np.genfromtxt(args.fingerprint, delimiter = ',')
 		self.num_hiddens_genotype = args.genotype_hiddens
-		self.num_hiddens_drug = list(map(int, args.drug_hiddens.split(',')))
+		# self.num_hiddens_drug = list(map(int, args.drug_hiddens.split(',')))
 		self.num_hiddens_final = args.final_hiddens
 		self.lr = args.lr
 		self.wd = args.wd
