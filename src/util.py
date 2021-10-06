@@ -76,8 +76,8 @@ def standardize_data(df, std_df):
 	return merged
 
 
-def load_train_data(train_file, cell2id, drug2id, zscore_method, std_file):
-
+def load_train_data(train_file, cell2id, zscore_method, std_file):
+	# will need to remove drug column
 	train_df = pd.read_csv(train_file, sep='\t', header=None, names=['cell_line', 'smiles', 'auc', 'dataset', 'drug'])
 	std_df = calc_std_vals(train_df, zscore_method)
 	std_df.to_csv(std_file, sep='\t', header=False, index=False)
@@ -86,13 +86,13 @@ def load_train_data(train_file, cell2id, drug2id, zscore_method, std_file):
 	feature = []
 	label = []
 	for row in train_df.values:
-		feature.append([cell2id[row[0]], drug2id[row[1]]])
+		feature.append([cell2id[row[0]]])
 		label.append([float(row[2])])
 
 	return feature, label
 
 
-def load_pred_data(test_file, cell2id, drug2id, zscore_method, train_std_file):
+def load_pred_data(test_file, cell2id, zscore_method, train_std_file):
 
 	train_std_df = pd.read_csv(train_std_file, sep='\t', header=None, names=['dataset', 'drug', 'center', 'scale'])
 	test_df = pd.read_csv(test_file, sep='\t', header=None, names=['cell_line', 'smiles', 'auc', 'dataset', 'drug'])
@@ -109,14 +109,14 @@ def load_pred_data(test_file, cell2id, drug2id, zscore_method, train_std_file):
 	feature = []
 	label = []
 	for row in test_df.values:
-		feature.append([cell2id[row[0]], drug2id[row[1]]])
+		feature.append([cell2id[row[0]]])
 		label.append([float(row[2])])
 	return feature, label
 
 
-def prepare_train_data(train_file, val_file, cell2id_mapping, drug2id_mapping, zscore_method, std_file):
-	train_features, train_labels = load_train_data(train_file, cell2id_mapping, drug2id_mapping, zscore_method, std_file)
-	val_features, val_labels = load_pred_data(val_file, cell2id_mapping, drug2id_mapping, zscore_method, std_file)
+def prepare_train_data(train_file, val_file, cell2id_mapping, zscore_method, std_file):
+	train_features, train_labels = load_train_data(train_file, cell2id_mapping, zscore_method, std_file)
+	val_features, val_labels = load_pred_data(val_file, cell2id_mapping, zscore_method, std_file)
 	return (torch.Tensor(train_features), torch.FloatTensor(train_labels), torch.Tensor(val_features), torch.FloatTensor(val_labels))
 
 
@@ -139,13 +139,14 @@ def load_mapping(mapping_file, mapping_type):
 	return mapping
 
 
-def build_input_vector(input_data, cell_features, drug_features):
+def build_input_vector(input_data, cell_features):
 	genedim = len(cell_features[0,:])
-	drugdim = len(drug_features[0,:])
-	feature = np.zeros((input_data.size()[0], (genedim+drugdim)))
+	# feature = np.zeros((input_data.size()[0], (genedim+drugdim)))
+	feature = np.zeros((input_data.size()[0], (genedim)))
 
 	for i in range(input_data.size()[0]):
-		feature[i] = np.concatenate((cell_features[int(input_data[i,0])], drug_features[int(input_data[i,1])]), axis=None)
+		# feature[i] = np.concatenate((cell_features[int(input_data[i,0])], drug_features[int(input_data[i,1])]), axis=None)
+		feature[i] = cell_features[int(input_data[i,0])]
 
 	feature = torch.from_numpy(feature).float()
 	return feature
@@ -157,6 +158,7 @@ def create_term_mask(term_direct_gene_map, gene_dim, cuda_id):
 	term_mask_map = {}
 	for term, gene_set in term_direct_gene_map.items():
 		mask = torch.zeros(len(gene_set), gene_dim).cuda(cuda_id)
+		# mask = torch.zeros(len(gene_set), gene_dim)
 		for i, gene_id in enumerate(gene_set):
 			mask[i, gene_id] = 1
 		term_mask_map[term] = mask

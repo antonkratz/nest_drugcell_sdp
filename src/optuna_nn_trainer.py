@@ -70,6 +70,7 @@ class OptunaNNTrainer(NNTrainer):
 			for i, (inputdata, labels) in enumerate(train_loader):
 				# Convert torch tensor to Variable
 				features = util.build_input_vector(inputdata, self.data_wrapper.cell_features, self.data_wrapper.drug_features)
+				features = util.build_input_vector(inputdata, self.data_wrapper.cell_features)
 				cuda_features = Variable(features.cuda(self.data_wrapper.cuda))
 				cuda_labels = Variable(labels.cuda(self.data_wrapper.cuda))
 
@@ -110,7 +111,8 @@ class OptunaNNTrainer(NNTrainer):
 
 			for i, (inputdata, labels) in enumerate(val_loader):
 				# Convert torch tensor to Variable
-				features = util.build_input_vector(inputdata, self.data_wrapper.cell_features, self.data_wrapper.drug_features)
+				# features = util.build_input_vector(inputdata, self.data_wrapper.cell_features, self.data_wrapper.drug_features)
+				features = util.build_input_vector(inputdata, self.data_wrapper.cell_features)
 				cuda_features = Variable(features.cuda(self.data_wrapper.cuda))
 				aux_out_map, _ = self.model(cuda_features)
 

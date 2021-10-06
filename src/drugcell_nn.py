@@ -173,7 +173,7 @@ class DrugCellNN(nn.Module):
 
 		# connect two neural networks at the top #################################################
 		# final_input = torch.cat((term_NN_out_map[self.root], drug_out), 1)
-		final_input = torch.cat(term_NN_out_map[self.root], 1)
+		final_input = term_NN_out_map[self.root]
 
 		# out = self._modules['final_batchnorm_layer'](torch.tanh(self._modules['final_linear_layer'](final_input)))
 		# term_NN_out_map['final'] = out
