@@ -34,8 +34,10 @@ class GradientNNTrainer(NNTrainer):
 
 		train_label_gpu = Variable(train_label.cuda(self.data_wrapper.cuda))
 		val_label_gpu = Variable(val_label.cuda(self.data_wrapper.cuda))
+		# train_label_gpu = Variable(train_label)
+		# val_label_gpu = Variable(val_label)
 		train_loader = du.DataLoader(du.TensorDataset(train_feature, train_label), batch_size=self.data_wrapper.batchsize, shuffle=True)
-		val_loader = du.DataLoader(du.TensorDataset(val_feature, val_label), batch_size=self.data_wrapper.batchsize, shuffle=True)
+		val_loader = du.DataLoader(du.TensorDataset(val_feature, val_label), batch_size=self.data_wrapper.batchsize, shuffle=False)
 
 		optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.data_wrapper.lr, betas=(0.9, 0.99), eps=1e-05, weight_decay=self.data_wrapper.wd)
 		optimizer.zero_grad()
@@ -45,12 +47,17 @@ class GradientNNTrainer(NNTrainer):
 			self.model.train()
 			train_predict = torch.zeros(0, 0).cuda(self.data_wrapper.cuda)
 			_gradnorms = torch.empty(len(train_loader)).cuda(self.data_wrapper.cuda) # tensor for accumulating grad norms from each batch in this epoch
+			# train_predict = torch.zeros(0, 0)
+			# _gradnorms = torch.empty(len(train_loader)) # tensor for accumulating grad norms from each batch in this epoch
 
 			for i, (inputdata, labels) in enumerate(train_loader):
 				# Convert torch tensor to Variable
 				features = util.build_input_vector(inputdata, self.data_wrapper.cell_features, self.data_wrapper.drug_features)
 				cuda_features = Variable(features.cuda(self.data_wrapper.cuda))
 				cuda_labels = Variable(labels.cuda(self.data_wrapper.cuda))
+				# features = util.build_input_vector(inputdata, self.data_wrapper.cell_features)
+				# cuda_features = Variable(features)
+				# cuda_labels = Variable(labels)
 
 				# Forward + Backward + Optimize
 				optimizer.zero_grad()  # zero the gradient buffer
@@ -87,11 +94,14 @@ class GradientNNTrainer(NNTrainer):
 			self.model.eval()
 
 			val_predict = torch.zeros(0, 0).cuda(self.data_wrapper.cuda)
+			# val_predict = torch.zeros(0, 0)
 
 			for i, (inputdata, labels) in enumerate(val_loader):
 				# Convert torch tensor to Variable
 				features = util.build_input_vector(inputdata, self.data_wrapper.cell_features, self.data_wrapper.drug_features)
 				cuda_features = Variable(features.cuda(self.data_wrapper.cuda))
+				# features = util.build_input_vector(inputdata, self.data_wrapper.cell_features)
+				# cuda_features = Variable(features)
 				aux_out_map, _ = self.model(cuda_features)
 
 				if val_predict.size()[0] == 0:

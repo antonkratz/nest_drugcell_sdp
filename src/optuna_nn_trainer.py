@@ -57,7 +57,7 @@ class OptunaNNTrainer(NNTrainer):
 		train_label_gpu = Variable(train_label.cuda(self.data_wrapper.cuda))
 		val_label_gpu = Variable(val_label.cuda(self.data_wrapper.cuda))
 		train_loader = du.DataLoader(du.TensorDataset(train_feature, train_label), batch_size=self.data_wrapper.batchsize, shuffle=True)
-		val_loader = du.DataLoader(du.TensorDataset(val_feature, val_label), batch_size=self.data_wrapper.batchsize, shuffle=True)
+		val_loader = du.DataLoader(du.TensorDataset(val_feature, val_label), batch_size=self.data_wrapper.batchsize, shuffle=False)
 
 		optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.data_wrapper.lr, betas=(0.9, 0.99), eps=1e-05, weight_decay=self.data_wrapper.wd)
 		optimizer.zero_grad()
@@ -70,6 +70,7 @@ class OptunaNNTrainer(NNTrainer):
 			for i, (inputdata, labels) in enumerate(train_loader):
 				# Convert torch tensor to Variable
 				features = util.build_input_vector(inputdata, self.data_wrapper.cell_features, self.data_wrapper.drug_features)
+				features = util.build_input_vector(inputdata, self.data_wrapper.cell_features)
 				cuda_features = Variable(features.cuda(self.data_wrapper.cuda))
 				cuda_labels = Variable(labels.cuda(self.data_wrapper.cuda))
 
@@ -110,7 +111,8 @@ class OptunaNNTrainer(NNTrainer):
 
 			for i, (inputdata, labels) in enumerate(val_loader):
 				# Convert torch tensor to Variable
-				features = util.build_input_vector(inputdata, self.data_wrapper.cell_features, self.data_wrapper.drug_features)
+				# features = util.build_input_vector(inputdata, self.data_wrapper.cell_features, self.data_wrapper.drug_features)
+				features = util.build_input_vector(inputdata, self.data_wrapper.cell_features)
 				cuda_features = Variable(features.cuda(self.data_wrapper.cuda))
 				aux_out_map, _ = self.model(cuda_features)
 
