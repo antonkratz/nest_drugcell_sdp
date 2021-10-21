@@ -38,6 +38,17 @@ def get_drug_corr_median(torch_pred, torch_labels, torch_inputdata):
 
 	return np.median(corr_list)
 
+def class_accuracy(y_pred, y_test): # adapted from https://towardsdatascience.com/pytorch-tabular-multiclass-classification-9f8211a123ab 
+    y_pred_softmax = torch.log_softmax(y_pred, dim = 1)
+    _, y_pred_tags = torch.max(y_pred_softmax, dim = 1)    
+
+    correct_pred = (y_pred_tags == y_test).float()
+    acc = correct_pred.sum() / len(correct_pred)
+
+    acc = torch.round(acc * 100)
+
+    return acc
+
 
 def calc_std_vals(df, zscore_method):
 	std_df = pd.DataFrame(columns=['smiles', 'center', 'scale'])
@@ -77,7 +88,6 @@ def standardize_data(df, std_df):
 
 
 def load_train_data(train_file, cell2id, zscore_method, std_file):
-	# will need to remove drug column
 	train_df = pd.read_csv(train_file, sep='\t', header=None, names=['cell_line', 'smiles', 'auc'])
 	std_df = calc_std_vals(train_df, zscore_method)
 	std_df.to_csv(std_file, sep='\t', header=False, index=False)
@@ -115,8 +125,11 @@ def load_pred_data(test_file, cell2id, zscore_method, train_std_file):
 
 def prepare_train_data(train_file, val_file, cell2id_mapping, zscore_method, std_file):
 	train_features, train_labels = load_train_data(train_file, cell2id_mapping, zscore_method, std_file)
+	# Construct sampler
+	weights = 1. / torch.tensor(np.unique(train_labels, return_counts=True), dtype=torch.float)
+	sample_weights = weights[torch.tensor(train_labels)]
 	val_features, val_labels = load_pred_data(val_file, cell2id_mapping, zscore_method, std_file)
-	return (torch.Tensor(train_features), torch.FloatTensor(train_labels), torch.Tensor(val_features), torch.FloatTensor(val_labels))
+	return (torch.Tensor(train_features), torch.FloatTensor(train_labels), torch.Tensor(val_features), torch.FloatTensor(val_labels), sample_weights, weights)
 
 
 def prepare_predict_data(test_file, cell2id_mapping_file, drug2id_mapping_file, zscore_method, std_file):

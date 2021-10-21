@@ -16,15 +16,20 @@ class NNTrainer():
 	def __init__(self, opt):
 		self.data_wrapper = TrainingDataWrapper(opt)
 		self.model = DrugCellNN(self.data_wrapper)
-		self.model.cuda(self.data_wrapper.cuda)
-
+		# self.model.cuda(self.data_wrapper.cuda)
 
 	def train_model(self):
 
 		epoch_start_time = time.time()
 		max_corr = 0
 
-		train_feature, train_label, val_feature, val_label = self.data_wrapper.prepare_train_data()
+		train_feature, train_label, val_feature, val_label, sample_weights, class_weights = self.data_wrapper.prepare_train_data()
+
+		sampler = nn.WeightedRandomSampler(
+			weights=sample_weights,
+			num_samples=len(train_label),
+			replacement=True
+		)
 
 		term_mask_map = util.create_term_mask(self.model.term_direct_gene_map, self.model.gene_dim, self.data_wrapper.cuda)
 		for name, param in self.model.named_parameters():
@@ -64,14 +69,15 @@ class NNTrainer():
 
 				total_loss = 0
 				for name, output in aux_out_map.items():
-					loss = nn.MSELoss()
+					# loss = nn.MSELoss()
+					loss = nn.CrossEntropyLoss(weight=class_weights)
 					if name == 'final':
 						total_loss += loss(output, cuda_labels)
 					else:
 						total_loss += self.data_wrapper.alpha * loss(output, cuda_labels)
 				total_loss.backward()
 
-				for name, param in self.model.named_parameters():
+				for name, param in self.model.named_parameters():                 
 					if '_direct_gene_layer.weight' not in name:
 						continue
 					term_name = name.split('_')[0]
