@@ -31,6 +31,7 @@ def main():
 	parser.add_argument('-optimize', help = 'Hyper-parameter optimization', type = int, default = 0)
 	parser.add_argument('-zscore_method', help='zscore method (zscore/robustz)', type=str)
 	parser.add_argument('-std', help = 'Standardization File', type = str)
+	parser.add_argument('-n_classes', help = 'Number of classes for data', type = int)
 
 	opt = parser.parse_args()
 

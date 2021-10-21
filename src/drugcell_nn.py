@@ -38,8 +38,9 @@ class DrugCellNN(nn.Module):
 		# final_input_size = self.num_hiddens_genotype # + data_wrapper.num_hiddens_drug[-1]
 		# self.add_module('final_linear_layer', nn.Linear(final_input_size, data_wrapper.num_hiddens_final))
 		# self.add_module('final_batchnorm_layer', nn.BatchNorm1d(data_wrapper.num_hiddens_final))
-		self.add_module('final_aux_linear_layer', nn.Linear(data_wrapper.num_hiddens_final, 1))
-		self.add_module('final_linear_layer_output', nn.Linear(1, 1))
+		# self.add_module('final_aux_linear_layer', nn.Linear(data_wrapper.num_hiddens_final, 1))
+		# self.add_module('final_linear_layer_output', nn.Linear(1, 1))
+		self.add_module('final_linear_layer_output', nn.Linear(data_wrapper.num_hiddens_final, 3))
 
 
 	# calculate the number of values in a state (term)
@@ -179,8 +180,8 @@ class DrugCellNN(nn.Module):
 		# term_NN_out_map['final'] = out
 
 		# aux_layer_out = torch.tanh(self._modules['final_aux_linear_layer'](out))
-		aux_layer_out = torch.tanh(self._modules['final_aux_linear_layer'](final_input))
-		aux_out_map['final'] = self._modules['final_linear_layer_output'](aux_layer_out)
+		# aux_layer_out = torch.tanh(self._modules['final_aux_linear_layer'](final_input))
+		aux_out_map['final'] = self._modules['final_linear_layer_output'](final_input)
 
 		return aux_out_map, term_NN_out_map
 
