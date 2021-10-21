@@ -1,4 +1,5 @@
 import argparse
+import copy
 
 from nn_trainer import *
 from optuna_nn_trainer import *
@@ -12,7 +13,7 @@ def main():
 	parser = argparse.ArgumentParser(description = 'Train DrugCell')
 	parser.add_argument('-onto', help = 'Ontology file used to guide the neural network', type = str)
 	parser.add_argument('-train', help = 'Training dataset', type = str)
-	parser.add_argument('-val', help = 'Validation dataset', type = str)
+	#parser.add_argument('-val', help = 'Validation dataset', type = str)
 	parser.add_argument('-epoch', help = 'Training epochs for training', type = int, default = 300)
 	parser.add_argument('-lr', help = 'Learning rate', type = float, default = 0.001)
 	parser.add_argument('-wd', help = 'Weight decay', type = float, default = 0.001)
@@ -31,20 +32,39 @@ def main():
 	parser.add_argument('-optimize', help = 'Hyper-parameter optimization', type = int, default = 0)
 	parser.add_argument('-zscore_method', help='zscore method (zscore/robustz)', type=str)
 	parser.add_argument('-std', help = 'Standardization File', type = str)
+	parser.add_argument('-result', help='Result file prefix', type=str, default='result/predict')
 	parser.add_argument('-n_classes', help = 'Number of classes for data', type = int)
 
 	opt = parser.parse_args()
 
-	if opt.optimize == 0:
-		NNTrainer(opt).train_model()
-	elif opt.optimize == 1:
-		GradientNNTrainer(opt).train_model()
-	elif opt.optimize == 2:
-		OptunaNNTrainer(opt).exec_study()
-	else:
-		print("Wrong value for optimize.")
-		exit(1)
+	file_handle = open(opt.train)
+	all_data = []
+	for line in file_handle:
+		all_data.append(line)
+	file_handle.close()
 
+	predict_result = open(opt.result + ".txt", 'w')
+	for i, line in all_data:
+		if line == '/n':
+			continue
+		opt.val = [line, '/n']
+		opt.train = copy.deepcopy(all_data)
+		opt.train.pop(i)
+
+		opt.modeldir = opt.modeldir + '_' + str(i+1)
+
+		if opt.optimize == 0:
+			predicted_label = NNTrainer(opt).train_model()
+		elif opt.optimize == 1:
+			predicted_label = GradientNNTrainer(opt).train_model()
+		elif opt.optimize == 2:
+			OptunaNNTrainer(opt).exec_study()
+		else:
+			print("Wrong value for optimize.")
+			exit(1)
+
+		predict_result.write(line + '\t' + str(predicted_label) + '\n')
+	predict_result.close()
 
 if __name__ == "__main__":
 	main()

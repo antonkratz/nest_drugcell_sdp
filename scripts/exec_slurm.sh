@@ -2,10 +2,14 @@
 
 homedir="/cellar/users/asinghal/Workspace/nest_drugcell"
 
-zscore_method=$1
+dataset="gdsc2"
+zscore_method="auc"
 
-for ontology in cg
+drugs = `awk 'BEGIN {FS="\t"} {print $2}' "${homedir}/data/drug2ind_${dataset}.txt"`
+
+for ont in ctg
 do
-	sbatch --job-name "NDC_${ontology}_${zscore_method}" --output "${homedir}/logs/out_${ontology}_${zscore_method}.log" ${homedir}/scripts/batch.sh $homedir $ontology ${zscore_method}
+	do drug in drugs
+		sbatch --job-name "NDC_${ont}_$drug_$1" --output "${homedir}/logs/out_${ont}_$drug_$1.log" ${homedir}/scripts/batch.sh $homedir $ont $dataset $drug ${zscore_method}
 	#sbatch --job-name "NDC_${ontology}" --output "out_${ontology}.log" ${homedir}/scripts/rlipp_slurm.sh $homedir $ontology
 done

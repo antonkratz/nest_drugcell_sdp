@@ -51,31 +51,29 @@ def class_accuracy(y_pred, y_test): # adapted from https://towardsdatascience.co
 
 
 def calc_std_vals(df, zscore_method):
-	## TODO #1 adapt code to make classifier skip normalization options
-	std_df = pd.DataFrame(columns=['dataset', 'drug', 'center', 'scale'])
-	std_df = pd.DataFrame(columns=['dataset', 'drug', 'center', 'scale'])
+	std_df = pd.DataFrame(columns=['smiles', 'center', 'scale'])
 	std_list = []
 
 	if zscore_method == 'zscore':
-		for name, group in df.groupby(['dataset', 'drug'])['auc']:
+		for name, group in df.groupby(['smiles'])['auc']:
 			center = group.mean()
 			scale = group.std()
 			if math.isnan(scale) or scale == 0.0:
 				scale = 1.0
-			temp = pd.DataFrame([[name[0], name[1], center, scale]], columns=std_df.columns)
+			temp = pd.DataFrame([[name, center, scale]], columns=std_df.columns)
 			std_list.append(temp)
 
 	elif zscore_method == 'robustz':
-		for name, group in df.groupby(['dataset', 'drug'])['auc']:
+		for name, group in df.groupby(['smiles'])['auc']:
 			center = group.median()
 			scale = group.quantile(0.75) - group.quantile(0.25)
 			if math.isnan(scale) or scale == 0.0:
 				scale = 1.0
-			temp = pd.DataFrame([[name[0], name[1], center, scale]], columns=std_df.columns)
+			temp = pd.DataFrame([[name, center, scale]], columns=std_df.columns)
 			std_list.append(temp)
 	else:
-		for name, group in df.groupby(['dataset', 'drug'])['auc']:
-			temp = pd.DataFrame([[name[0], name[1], 0.0, 1.0]], columns=std_df.columns)
+		for name, group in df.groupby(['smiles'])['auc']:
+			temp = pd.DataFrame([[name, 0.0, 1.0]], columns=std_df.columns)
 			std_list.append(temp)
 
 	std_df = pd.concat(std_list, ignore_index=True)
@@ -83,45 +81,35 @@ def calc_std_vals(df, zscore_method):
 
 
 def standardize_data(df, std_df):
-	merged = pd.merge(df, std_df, how="left", on=['dataset', 'drug'], sort=False)
+	merged = pd.merge(df, std_df, how="left", on=['smiles'], sort=False)
 	merged['z'] = (merged['auc'] - merged['center']) / merged['scale']
-	merged = merged[['cell_line', 'smiles', 'z', 'dataset', 'drug']]
+	merged = merged[['cell_line', 'smiles', 'z']]
 	return merged
 
 
 def load_train_data(train_file, cell2id, zscore_method, std_file):
-	# will need to remove drug column
-	# train_df = pd.read_csv(train_file, sep='\t', header=None, names=['cell_line', 'smiles', 'auc', 'dataset', 'drug'])
 	train_df = pd.read_csv(train_file, sep='\t', header=None, names=['cell_line', 'smiles', 'auc'])
-	if zscore_method: # ES added to make optional only when zscore method supplied
-		std_df = calc_std_vals(train_df, zscore_method)
-		std_df.to_csv(std_file, sep='\t', header=False, index=False)
-		train_df = standardize_data(train_df, std_df)
+	std_df = calc_std_vals(train_df, zscore_method)
+	std_df.to_csv(std_file, sep='\t', header=False, index=False)
+	train_df = standardize_data(train_df, std_df)
 
 	feature = []
 	label = []
-	notthere = [] # see comment below
 	for row in train_df.values:
-		if row[0] in cell2id.keys():# added to ignore samples wo training data
-			feature.append([cell2id[row[0]]])
-			label.append([float(row[2])])
-		else: # see comment above 
-			notthere.append(row[0])
-	print(f'The following cell lines were excluded from analysis: {notthere}')
+		feature.append([cell2id[row[0]]])
+		label.append([float(row[2])])
 
 	return feature, label
 
 
 def load_pred_data(test_file, cell2id, zscore_method, train_std_file):
 
-	train_std_df = pd.read_csv(train_std_file, sep='\t', header=None, names=['dataset', 'drug', 'center', 'scale'])
-	# test_df = pd.read_csv(test_file, sep='\t', header=None, names=['cell_line', 'smiles', 'auc', 'dataset', 'drug'])
+	train_std_df = pd.read_csv(train_std_file, sep='\t', header=None, names=['smiles', 'center', 'scale'])
 	test_df = pd.read_csv(test_file, sep='\t', header=None, names=['cell_line', 'smiles', 'auc'])
 	test_std_df = calc_std_vals(test_df, zscore_method)
 	for i, row in test_std_df.iterrows():
-		dataset = row['dataset']
-		drug = str(row['drug'])
-		train_entry = train_std_df.query('dataset == @dataset and drug == @drug')
+		smiles = row['smiles']
+		train_entry = train_std_df.query('smiles == @smiles')
 		if not train_entry.empty:
 			test_std_df.loc[i, 'center'] = float(train_entry['center'])
 			test_std_df.loc[i, 'scale'] = float(train_entry['scale'])
