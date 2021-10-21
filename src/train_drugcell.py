@@ -43,7 +43,7 @@ def main():
 	file_handle.close()
 
 	predict_result = open(opt.result + ".txt", 'w')
-	for i, line in all_data:
+	for i, line in enumerate(all_data):
 		if line == '/n':
 			continue
 		opt.val = [line, '/n']

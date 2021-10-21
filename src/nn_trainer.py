@@ -9,7 +9,6 @@ from torch.autograd import Variable
 import util
 from training_data_wrapper import *
 from drugcell_nn import *
-from predict_drugcell import *
 
 
 class NNTrainer():
