@@ -1,16 +1,13 @@
 #!/bin/bash
 homedir=$1
-gene2idfile="${homedir}/data/gene2ind_${2}.txt"
-cell2idfile="${homedir}/data/cell2ind_cg.txt"
-drug2idfile="${homedir}/data/drug2ind_cg.txt"
-ontfile="${homedir}/data/ontology_${2}.txt"
-mutationfile="${homedir}/data/cell2mutation_${2}.txt"
-drugfile="${homedir}/data/drug2fingerprint_cg.txt"
-traindatafile="${homedir}/data/drugcell_all_cg.txt"
-valdatafile="${homedir}/data/val_hpo.txt"
-zscore_method=$3
+gene2idfile="${homedir}/data/gene2ind_${2}_${3}.txt"
+cell2idfile="${homedir}/data/cell2ind_${2}.txt"
+ontfile="${homedir}/data/ontology_${2}_${3}.txt"
+mutationfile="${homedir}/data/cell2mutation_${2}_${3}.txt"
+traindatafile="${homedir}/data/training_files/train_${3}_${4}.txt"
+zscore_method=$5
 
-modeldir="${homedir}/model_${2}_${3}"
+modeldir="${homedir}/model_${3}_${4}_${5}"
 if [ -d $modeldir ]
 then
 	rm -rf $modeldir
@@ -18,6 +15,7 @@ fi
 mkdir -p $modeldir
 
 stdfile="${modeldir}/std.txt"
+resultfile="${modeldir}/predict"
 
 cudaid=0
 
@@ -25,7 +23,7 @@ pyScript="${homedir}/src/train_drugcell.py"
 
 source activate cuda11_env
 
-python -u $pyScript -onto $ontfile -gene2id $gene2idfile -drug2id $drug2idfile \
-	-cell2id $cell2idfile -train $traindatafile -val $valdatafile -genotype $mutationfile -std $stdfile \
-	-fingerprint $drugfile -genotype_hiddens 8 -drug_hiddens '100,50,6' -final_hiddens 6 -lr 0.008 -wd 0.005 -alpha 0.2 \
-	-model $modeldir -cuda $cudaid -batchsize 20000 -epoch 150 -optimize 1 -zscore_method $zscore_method > "${modeldir}/train.log"
+python -u $pyScript -onto $ontfile -gene2id $gene2idfile -cell2id $cell2idfile \
+	-train $traindatafile -genotype $mutationfile -std $stdfile -result $resultfile \
+	-model $modeldir -genotype_hiddens 2 -final_hiddens 6 -lr 0.0005 -wd 0.0001 -alpha 0.2 \
+	-cuda $cudaid -batchsize 100 -epoch 30 -optimize 0 -zscore_method $zscore_method > "${modeldir}/train.log"
