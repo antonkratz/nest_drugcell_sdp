@@ -14,4 +14,4 @@ src/copied_notebooks/
 temp/
 archive*/
 logs/
-es_debug/
+es_scripts/

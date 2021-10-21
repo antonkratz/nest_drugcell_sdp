@@ -31,11 +31,11 @@ class TrainingDataWrapper():
 		self.zscore_method = args.zscore_method
 		self.std = args.std
 		self.load_ontology(args.onto)
+		self.n_classes = args.n_classes
 
 
 	def prepare_train_data(self):
 		return util.prepare_train_data(self.train, self.val, self.cell_id_mapping, self.zscore_method, self.std)
-
 
 	def load_ontology(self, file_name):
 
