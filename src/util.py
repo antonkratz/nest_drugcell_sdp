@@ -38,16 +38,17 @@ def get_drug_corr_median(torch_pred, torch_labels, torch_inputdata):
 
 	return np.median(corr_list)
 
-def class_accuracy(y_pred, y_test): # adapted from https://towardsdatascience.com/pytorch-tabular-multiclass-classification-9f8211a123ab 
-    y_pred_softmax = torch.log_softmax(y_pred, dim = 1)
-    _, y_pred_tags = torch.max(y_pred_softmax, dim = 1)    
 
-    correct_pred = (y_pred_tags == y_test).float()
-    acc = correct_pred.sum() / len(correct_pred)
+def class_accuracy(y_pred, y_test): # adapted from https://towardsdatascience.com/pytorch-tabular-multiclass-classification-9f8211a123ab
+	y_pred_softmax = torch.log_softmax(y_pred, dim = 1)
+	_, y_pred_tags = torch.max(y_pred_softmax, dim = 1)
 
-    acc = torch.round(acc * 100)
+	correct_pred = (y_pred_tags == y_test).float()
+	acc = correct_pred.sum() / len(correct_pred)
 
-    return acc
+	acc = torch.round(acc * 100)
+
+	return acc
 
 
 def calc_std_vals(df, zscore_method):
@@ -124,11 +125,11 @@ def load_pred_data(test_file, cell2id, zscore_method, train_std_file):
 
 
 def prepare_train_data(train_file, val_file, cell2id_mapping, zscore_method, std_file):
-	train_features, train_labels = load_train_data(train_file, cell2id_mapping, zscore_method, std_file)
+	train_f, train_l = load_train_data(train_file, cell2id_mapping, zscore_method, std_file)
+	train_features, train_labels, val_features, val_labels = train_test_split(train_f, train_l, test_size=0.2, shuffle=True)
 	# Construct sampler
 	weights = 1. / torch.tensor(np.unique(train_labels, return_counts=True), dtype=torch.float)
 	sample_weights = weights[torch.tensor(train_labels)]
-	val_features, val_labels = load_pred_data(val_file, cell2id_mapping, zscore_method, std_file)
 	return (torch.Tensor(train_features), torch.FloatTensor(train_labels), torch.Tensor(val_features), torch.FloatTensor(val_labels), sample_weights, weights)
 
 
@@ -175,17 +176,6 @@ def create_term_mask(term_direct_gene_map, gene_dim, cuda_id):
 			mask[i, gene_id] = 1
 		term_mask_map[term] = mask
 	return term_mask_map
-
-
-# Update variance for every weight using Welford's online algorithm
-def update_variance(welford_set, new_weight):
-	(n, mean, M2) = welford_set
-	n += 1
-	delta = abs(new_weight - mean)
-	mean += delta/n
-	delta2 = abs(new_weight - mean)
-	M2 += delta * delta2
-	return (n, mean, M2)
 
 
 def get_grad_norm(model_params, norm_type):

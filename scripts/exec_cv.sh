@@ -2,13 +2,19 @@
 
 homedir="/cellar/users/asinghal/Workspace/nest_drugcell"
 
-zscore_method=$1
+dataset="gdsc2"
+zscore_method="auc"
+folds=10
 
-for ontology in cg
-#cg_go fmg_718 fmg_718_go random_718_a random_718_b random_718_c random_718_d random_718_e cg_bb_a cg_bb_b cg_bb_c cg_bb_d cg_bb_e
+drugs = `awk 'BEGIN {print $1}' "${homedir}/data/drugname_${dataset}.txt"`
+
+for ont in ctg
 do
-	for i in {1..5}
+	for drug in drugs
 	do
-		sbatch --job-name "NDC_${ontology}_${zscore_method}_${i}" --output "${homedir}/logs/out_${ontology}_${zscore_method}_${i}.log" ${homedir}/scripts/cv_batch.sh $homedir $ontology $i ${zscore_method}
+		for i in {1..${folds}}
+		do
+			bash "${homedir}/scripts/create_cv_data.sh" $homedir $dataset $drug $folds $i
+			sbatch -J "NDC_${ont}_${drug}_${i}" -o "${homedir}/logs/out_${ont}_${drug}_${i}.log" ${homedir}/scripts/cv_batch.sh $homedir $ont $dataset $drug ${zscore_method} $i
 	done
 done
