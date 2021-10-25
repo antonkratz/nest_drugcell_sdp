@@ -22,6 +22,7 @@ class GradientNNTrainer(NNTrainer):
 		epoch_start_time = time.time()
 		max_corr = 0.0
 
+		#train_feature, train_label, val_feature, val_label = self.data_wrapper.prepare_train_data()
 		train_feature, train_label, val_feature, val_label, sample_weights, class_weights = self.data_wrapper.prepare_train_data()
 
 		sampler = nn.WeightedRandomSampler(
@@ -38,13 +39,11 @@ class GradientNNTrainer(NNTrainer):
 			else:
 				param.data = param.data * 0.1
 
-		# train_label_gpu = Variable(train_label.cuda(self.data_wrapper.cuda))
-		# val_label_gpu = Variable(val_label.cuda(self.data_wrapper.cuda))
-		train_label_gpu = Variable(train_label)
-		val_label_gpu = Variable(val_label)
+		train_label_gpu = Variable(train_label.cuda(self.data_wrapper.cuda))
+		val_label_gpu = Variable(val_label.cuda(self.data_wrapper.cuda))
 		# train_loader = du.DataLoader(du.TensorDataset(train_feature, train_label), batch_size=self.data_wrapper.batchsize, shuffle=True)
 		train_loader = du.DataLoader(du.TensorDataset(train_feature, train_label), batch_size=self.data_wrapper.batchsize, shuffle=True, sampler=sampler)
-		val_loader = du.DataLoader(du.TensorDataset(val_feature, val_label), batch_size=self.data_wrapper.batchsize, shuffle=False)
+		val_loader = du.DataLoader(du.TensorDataset(val_feature, val_label), batch_size=self.data_wrapper.batchsize, shuffle=True)
 
 		optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.data_wrapper.lr, betas=(0.9, 0.99), eps=1e-05, weight_decay=self.data_wrapper.wd)
 		optimizer.zero_grad()
@@ -54,17 +53,12 @@ class GradientNNTrainer(NNTrainer):
 			self.model.train()
 			train_predict = torch.zeros(0, 0).cuda(self.data_wrapper.cuda)
 			_gradnorms = torch.empty(len(train_loader)).cuda(self.data_wrapper.cuda) # tensor for accumulating grad norms from each batch in this epoch
-			# train_predict = torch.zeros(0, 0)
-			# _gradnorms = torch.empty(len(train_loader)) # tensor for accumulating grad norms from each batch in this epoch
 
 			for i, (inputdata, labels) in enumerate(train_loader):
 				# Convert torch tensor to Variable
-				# features = util.build_input_vector(inputdata, self.data_wrapper.cell_features, self.data_wrapper.drug_features)
-				# cuda_features = Variable(features.cuda(self.data_wrapper.cuda))
-				# cuda_labels = Variable(labels.cuda(self.data_wrapper.cuda))
 				features = util.build_input_vector(inputdata, self.data_wrapper.cell_features)
-				cuda_features = Variable(features)
-				cuda_labels = Variable(labels)
+				cuda_features = Variable(features.cuda(self.data_wrapper.cuda))
+				cuda_labels = Variable(labels.cuda(self.data_wrapper.cuda))
 
 				# Forward + Backward + Optimize
 				optimizer.zero_grad()  # zero the gradient buffer
@@ -96,20 +90,18 @@ class GradientNNTrainer(NNTrainer):
 				optimizer.step()
 
 			gradnorms = sum(_gradnorms).unsqueeze(0).cpu().numpy()[0] # Save total gradnorm for epoch
-			train_corr = util.pearson_corr(train_predict, train_label_gpu)
+			#train_corr = util.pearson_corr(train_predict, train_label_gpu)
 			#train_corr = util.get_drug_corr_median(train_predict, train_label_gpu, train_feature)
+			train_corr = util.class_accuracy(train_predict, train_label_gpu)
 
 			self.model.eval()
 
 			val_predict = torch.zeros(0, 0).cuda(self.data_wrapper.cuda)
-			# val_predict = torch.zeros(0, 0)
 
 			for i, (inputdata, labels) in enumerate(val_loader):
 				# Convert torch tensor to Variable
-				features = util.build_input_vector(inputdata, self.data_wrapper.cell_features, self.data_wrapper.drug_features)
+				features = util.build_input_vector(inputdata, self.data_wrapper.cell_features)
 				cuda_features = Variable(features.cuda(self.data_wrapper.cuda))
-				# features = util.build_input_vector(inputdata, self.data_wrapper.cell_features)
-				# cuda_features = Variable(features)
 				aux_out_map, _ = self.model(cuda_features)
 
 				if val_predict.size()[0] == 0:
@@ -118,8 +110,8 @@ class GradientNNTrainer(NNTrainer):
 					val_predict = torch.cat([val_predict, aux_out_map['final'].data], dim=0)
 
 			# val_corr = util.pearson_corr(val_predict, val_label_gpu)
-			val_corr = util.class_accuracy(val_predict, val_label_gpu)
 			#val_corr = util.get_drug_corr_median(val_predict, val_label_gpu, val_feature)
+			val_corr = util.class_accuracy(val_predict, val_label_gpu)
 
 			if val_corr >= max_corr:
 				max_corr = val_corr

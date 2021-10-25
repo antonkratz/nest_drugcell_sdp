@@ -15,7 +15,6 @@ class DrugCellNN(nn.Module):
 
 		self.root = data_wrapper.root
 		self.num_hiddens_genotype = data_wrapper.num_hiddens_genotype
-		# self.num_hiddens_drug = data_wrapper.num_hiddens_drug
 
 		# dictionary from terms to genes directly annotated with the term
 		self.term_direct_gene_map = data_wrapper.term_direct_gene_map
@@ -25,22 +24,14 @@ class DrugCellNN(nn.Module):
 
 		# ngenes, gene_dim are the number of all genes
 		self.gene_dim = len(data_wrapper.gene_id_mapping)
-		# self.drug_dim = len(data_wrapper.drug_features[0,:])
 
 		# add modules for neural networks to process genotypes
 		self.contruct_direct_gene_layer()
 		self.construct_NN_graph(data_wrapper.dG)
 
-		# # add modules for neural networks to process drugs
-		# self.construct_NN_drug()
-
-		# add modules for final layer
-		# final_input_size = self.num_hiddens_genotype # + data_wrapper.num_hiddens_drug[-1]
-		# self.add_module('final_linear_layer', nn.Linear(final_input_size, data_wrapper.num_hiddens_final))
-		# self.add_module('final_batchnorm_layer', nn.BatchNorm1d(data_wrapper.num_hiddens_final))
-		# self.add_module('final_aux_linear_layer', nn.Linear(data_wrapper.num_hiddens_final, 1))
+		# add module for final layer
 		# self.add_module('final_linear_layer_output', nn.Linear(1, 1))
-		self.add_module('final_linear_layer_output', nn.Linear(data_wrapper.num_hiddens_final, 3))
+		self.add_module('final_linear_layer_output', nn.Linear(data_wrapper.num_hiddens_final, data_wrapper.n_classes))
 
 
 	# calculate the number of values in a state (term)
@@ -53,7 +44,6 @@ class DrugCellNN(nn.Module):
 
 			# log the number of hidden variables per each term
 			num_output = int(num_output)
-			#print("term\t%s\tterm_size\t%d\tnum_hiddens\t%d" % (term, term_size, num_output))
 			self.term_dim_map[term] = num_output
 
 
@@ -67,19 +57,6 @@ class DrugCellNN(nn.Module):
 
 			# if there are some genes directly annotated with the term, add a layer taking in all genes and forwarding out only those genes
 			self.add_module(term+'_direct_gene_layer', nn.Linear(self.gene_dim, len(gene_set)))
-
-
-	# # add modules for fully connected neural networks for drug processing
-	# def construct_NN_drug(self):
-	# 	input_size = self.drug_dim
-
-	# 	for i in range(len(self.num_hiddens_drug)):
-	# 		self.add_module('drug_linear_layer_' + str(i+1), nn.Linear(input_size, self.num_hiddens_drug[i]))
-	# 		self.add_module('drug_batchnorm_layer_' + str(i+1), nn.BatchNorm1d(self.num_hiddens_drug[i]))
-	# 		self.add_module('drug_aux_linear_layer1_' + str(i+1), nn.Linear(self.num_hiddens_drug[i],1))
-	# 		self.add_module('drug_aux_linear_layer2_' + str(i+1), nn.Linear(1,1))
-
-	# 		input_size = self.num_hiddens_drug[i]
 
 
 	# start from bottom (leaves), and start building a neural network using the given ontology
@@ -97,8 +74,6 @@ class DrugCellNN(nn.Module):
 
 		while True:
 			leaves = [n for n in dG.nodes() if dG.out_degree(n) == 0]
-			#leaves = [n for n,d in dG.out_degree().items() if d==0]
-			#leaves = [n for n,d in dG.out_degree() if d==0]
 
 			if len(leaves) == 0:
 				break
@@ -130,7 +105,6 @@ class DrugCellNN(nn.Module):
 	# definition of forward function
 	def forward(self, x):
 		gene_input = x.narrow(1, 0, self.gene_dim)
-		# drug_input = x.narrow(1, self.gene_dim, self.drug_dim)
 
 		# define forward function for genotype arm #############################################
 		term_gene_out_map = {}
@@ -162,39 +136,7 @@ class DrugCellNN(nn.Module):
 				aux_layer1_out = torch.tanh(self._modules[term+'_aux_linear_layer1'](term_NN_out_map[term]))
 				aux_out_map[term] = self._modules[term+'_aux_linear_layer2'](aux_layer1_out)
 
-		# # define forward function for drug arm #################################################
-		# drug_out = drug_input
-
-		# for i in range(1, len(self.num_hiddens_drug)+1, 1):
-		# 	drug_out = self._modules['drug_batchnorm_layer_'+str(i)]( torch.tanh(self._modules['drug_linear_layer_'+str(i)](drug_out)))
-		# 	term_NN_out_map['drug_'+str(i)] = drug_out
-
-		# 	aux_layer1_out = torch.tanh(self._modules['drug_aux_linear_layer1_'+str(i)](drug_out))
-		# 	aux_out_map['drug_'+str(i)] = self._modules['drug_aux_linear_layer2_'+str(i)](aux_layer1_out)
-
-		# connect two neural networks at the top #################################################
-		# final_input = torch.cat((term_NN_out_map[self.root], drug_out), 1)
 		final_input = term_NN_out_map[self.root]
-
-		# out = self._modules['final_batchnorm_layer'](torch.tanh(self._modules['final_linear_layer'](final_input)))
-		# term_NN_out_map['final'] = out
-
-		# aux_layer_out = torch.tanh(self._modules['final_aux_linear_layer'](out))
-		# aux_layer_out = torch.tanh(self._modules['final_aux_linear_layer'](final_input))
 		aux_out_map['final'] = self._modules['final_linear_layer_output'](final_input)
 
 		return aux_out_map, term_NN_out_map
-
-
-	# get weights from the model based on wight weight_type
-	# for example: weight_type = '_direct_gene_layer.weight'
-	def get_model_weights(self, term_mask_map, weight_type):
-		term_weights_map = {}
-		for name, param in self.named_parameters():
-			if weight_type not in name:
-				continue
-			term = name.split('_')[0]
-			term_weights = torch.mm(param.grad.data, torch.transpose(term_mask_map[term], 0, 1))
-			term_weights = torch.diagonal(term_weights)
-			term_weights_map[term] = term_weights
-		return term_weights_map

@@ -9,7 +9,8 @@ drugs = `awk 'BEGIN {FS="\t"} {print $2}' "${homedir}/data/drug2ind_${dataset}.t
 
 for ont in ctg
 do
-	do drug in drugs
-		sbatch --job-name "NDC_${ont}_$drug_$1" --output "${homedir}/logs/out_${ont}_$drug_$1.log" ${homedir}/scripts/batch.sh $homedir $ont $dataset $drug ${zscore_method}
-	#sbatch --job-name "NDC_${ontology}" --output "out_${ontology}.log" ${homedir}/scripts/rlipp_slurm.sh $homedir $ontology
+	for drug in drugs
+	do
+		sbatch -J "NDC_${ont}_${drug}" -o "${homedir}/logs/out_${ont}_${drug}.log" ${homedir}/scripts/batch.sh $homedir $ont $dataset $drug ${zscore_method}
+	done
 done
