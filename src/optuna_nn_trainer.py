@@ -31,7 +31,7 @@ class OptunaNNTrainer(NNTrainer):
 		self.data_wrapper.genotype_hiddens = trial.suggest_categorical("genotype_hiddens", [1, 2, 4, 6])
 		self.data_wrapper.lr = trial.suggest_float("lr", 1e-4, 5e-1, log=True)
 		# self.data_wrapper.wd = trial.suggest_float("weight_decay", 5e-5, 1e-2, log=True)
-		self.data_wrapper.alpha = trial.suggest_categorical("alpha", [0.2, 0.3, 0.4, 0.5, 0.6. 0.7, 0.8, 0.9, 1.0])
+		self.data_wrapper.alpha = trial.suggest_categorical("alpha", [0.2, 0.4, 0.6, 0.8, 1.0])
 		self.data_wrapper.batchsize = trial.suggest_categorical("batchsize", [32, 64, 96, 128])
 
 		for key, value in trial.params.items():
