@@ -30,8 +30,8 @@ class DrugCellNN(nn.Module):
 		self.construct_NN_graph(data_wrapper.dG)
 
 		# add module for final layer
-		# self.add_module('final_linear_layer_output', nn.Linear(1, 1))
-		self.add_module('final_linear_layer_output', nn.Linear(data_wrapper.num_hiddens_final, data_wrapper.n_classes))
+		self.add_module('final_linear_layer_output', nn.Linear(1, 1))
+		#self.add_module('final_linear_layer_output', nn.Linear(data_wrapper.num_hiddens_final, data_wrapper.n_classes))
 
 
 	# calculate the number of values in a state (term)
