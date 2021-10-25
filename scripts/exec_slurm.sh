@@ -5,7 +5,7 @@ homedir="/cellar/users/asinghal/Workspace/nest_drugcell"
 dataset="gdsc2"
 zscore_method="auc"
 
-drugs = `awk 'BEGIN {FS="\t"} {print $2}' "${homedir}/data/drug2ind_${dataset}.txt"`
+drugs=`awk 'BEGIN {FS="\t"} {print $2}' "${homedir}/data/drug2ind_${dataset}.txt"`
 
 for ont in ctg
 do

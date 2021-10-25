@@ -22,14 +22,14 @@ class OptunaNNTrainer(NNTrainer):
 
 	def exec_study(self):
 		study = optuna.create_study(direction="maximize")
-		study.optimize(self.train_model, n_trials=50)
+		study.optimize(self.train_model, n_trials=20)
 		self.print_result(study)
 
 
 	def setup_trials(self, trial):
 
 		self.data_wrapper.lr = trial.suggest_float("learning_rate", 1e-6, 5e-2, log=True)
-		self.data_wrapper.wd = trial.suggest_categorical("weight_decay", [self.data_wrapper.lr, self.data_wrapper.lr/5, self.data_wrapper.lr/10])
+		# self.data_wrapper.wd = trial.suggest_float("weight_decay", 1e-6, 5e-2, log=True)
 		self.data_wrapper.alpha = trial.suggest_categorical("alpha", [0.2, 0.5, 0.8, 1.0])
 
 		for key, value in trial.params.items():
@@ -43,14 +43,14 @@ class OptunaNNTrainer(NNTrainer):
 
 		self.setup_trials(trial)
 
-		# train_feature, train_label, val_feature, val_label = self.data_wrapper.prepare_train_data()
-		train_feature, train_label, val_feature, val_label, sample_weights, class_weights = self.data_wrapper.prepare_train_data()
+		train_feature, train_label, val_feature, val_label = self.data_wrapper.prepare_train_data()
+		# train_feature, train_label, val_feature, val_label, sample_weights, class_weights = self.data_wrapper.prepare_train_data()
 
-		sampler = nn.WeightedRandomSampler(
-			weights=sample_weights,
-			num_samples=len(train_label),
-			replacement=True
-		)
+		# sampler = nn.WeightedRandomSampler(
+		#	weights=sample_weights,
+		#	num_samples=len(train_label),
+		#	replacement=True
+		# )
 
 		term_mask_map = util.create_term_mask(self.model.term_direct_gene_map, self.model.gene_dim, self.data_wrapper.cuda)
 		for name, param in self.model.named_parameters():
@@ -66,7 +66,7 @@ class OptunaNNTrainer(NNTrainer):
 		# train_loader = du.DataLoader(du.TensorDataset(train_feature, train_label), batch_size=self.data_wrapper.batchsize, shuffle=True, sampler=sampler)
 		val_loader = du.DataLoader(du.TensorDataset(val_feature, val_label), batch_size=self.data_wrapper.batchsize, shuffle=True)
 
-		optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.data_wrapper.lr, betas=(0.9, 0.99), eps=1e-05, weight_decay=self.data_wrapper.wd)
+		optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.data_wrapper.lr, betas=(0.9, 0.99), eps=1e-05, weight_decay=self.data_wrapper.lr/5)
 		optimizer.zero_grad()
 
 		for epoch in range(self.data_wrapper.epochs):

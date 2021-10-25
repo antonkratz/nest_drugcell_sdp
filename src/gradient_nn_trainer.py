@@ -22,14 +22,14 @@ class GradientNNTrainer(NNTrainer):
 		epoch_start_time = time.time()
 		max_corr = 0.0
 
-		# train_feature, train_label, val_feature, val_label = self.data_wrapper.prepare_train_data()
-		train_feature, train_label, val_feature, val_label, sample_weights, class_weights = self.data_wrapper.prepare_train_data()
+		train_feature, train_label, val_feature, val_label = self.data_wrapper.prepare_train_data()
+		# train_feature, train_label, val_feature, val_label, sample_weights, class_weights = self.data_wrapper.prepare_train_data()
 
-		sampler = nn.WeightedRandomSampler(
-			weights=sample_weights,
-			num_samples=len(train_label),
-			replacement=True
-		)
+		# sampler = nn.WeightedRandomSampler(
+		#	weights=sample_weights,
+		#	num_samples=len(train_label),
+		#	replacement=True
+		# )
 
 		term_mask_map = util.create_term_mask(self.model.term_direct_gene_map, self.model.gene_dim, self.data_wrapper.cuda)
 		for name, param in self.model.named_parameters():
@@ -72,8 +72,8 @@ class GradientNNTrainer(NNTrainer):
 
 				total_loss = 0
 				for name, output in aux_out_map.items():
-					# loss = nn.MSELoss()
-					loss = nn.CrossEntropyLoss(weight=class_weights)
+					loss = nn.MSELoss()
+					# loss = nn.CrossEntropyLoss(weight=class_weights)
 					if name == 'final':
 						total_loss += loss(output, cuda_labels)
 					else:

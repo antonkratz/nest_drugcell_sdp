@@ -11,10 +11,10 @@ dataFile="${datadir}/train_${dataset}_${drug}.txt"
 trainFile="train_${dataset}_${drug}.txt"
 testFile="test_${dataset}_${drug}.txt"
 
-lc=`cat $dataFile | wc -l`
+lc=`cat ${dataFile} | wc -l`
 
-min=$(( ($lc * ($i - 1)) / ${folds} + 1 ))
-max=$(( ($lc * $i) / ${folds} ))
+min=$(( ($lc * (${i} - 1)) / ${folds} + 1 ))
+max=$(( ($lc * ${i}) / ${folds} ))
 
 sed -n "${min},${max}p" $dataFile > "${datadir}/${i}_${testFile}"
 if [[ $min > 1 ]]
