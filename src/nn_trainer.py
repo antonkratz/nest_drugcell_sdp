@@ -4,13 +4,12 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.utils.data as du
+from torch.utils.data import WeightedRandomSampler
 from torch.autograd import Variable
 
 import util
 from training_data_wrapper import *
 from drugcell_nn import *
-from predict_drugcell import *
-
 
 class NNTrainer():
 
@@ -26,7 +25,7 @@ class NNTrainer():
 
 		train_feature, train_label, val_feature, val_label, sample_weights, class_weights = self.data_wrapper.prepare_train_data()
 
-		sampler = nn.WeightedRandomSampler(
+		sampler = WeightedRandomSampler(
 			weights=sample_weights,
 			num_samples=len(train_label),
 			replacement=True
@@ -40,9 +39,12 @@ class NNTrainer():
 			else:
 				param.data = param.data * 0.1
 
-		train_label_gpu = Variable(train_label.cuda(self.data_wrapper.cuda))
-		val_label_gpu = Variable(val_label.cuda(self.data_wrapper.cuda))
-		train_loader = du.DataLoader(du.TensorDataset(train_feature, train_label), batch_size=self.data_wrapper.batchsize, shuffle=True)
+		# train_label_gpu = Variable(train_label.cuda(self.data_wrapper.cuda))
+		# val_label_gpu = Variable(val_label.cuda(self.data_wrapper.cuda))
+		train_label_gpu = Variable(train_label)
+		val_label_gpu = Variable(val_label)
+		# train_loader = du.DataLoader(du.TensorDataset(train_feature, train_label), batch_size=self.data_wrapper.batchsize, shuffle=True)
+		train_loader = du.DataLoader(du.TensorDataset(train_feature, train_label), batch_size=self.data_wrapper.batchsize, sampler=sampler)
 
 		optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.data_wrapper.lr, betas=(0.9, 0.99), eps=1e-05, weight_decay=self.data_wrapper.wd)
 		optimizer.zero_grad()
@@ -50,13 +52,17 @@ class NNTrainer():
 		for epoch in range(self.data_wrapper.epochs):
 			# Train
 			self.model.train()
-			train_predict = torch.zeros(0, 0).cuda(self.data_wrapper.cuda)
+			# train_predict = torch.zeros(0, 0).cuda(self.data_wrapper.cuda)
+			train_predict = torch.zeros(0, 0)
 
 			for i, (inputdata, labels) in enumerate(train_loader):
 				#features = util.build_input_vector(inputdata, self.data_wrapper.cell_features, self.data_wrapper.drug_features)
+				# cuda_features = Variable(features.cuda(self.data_wrapper.cuda))
+				# cuda_labels = Variable(labels.cuda(self.data_wrapper.cuda))
+
 				features = util.build_input_vector(inputdata, self.data_wrapper.cell_features)
-				cuda_features = Variable(features.cuda(self.data_wrapper.cuda))
-				cuda_labels = Variable(labels.cuda(self.data_wrapper.cuda))
+				cuda_features = Variable(features)
+				cuda_labels = Variable(labels)
 
 				# Forward + Backward + Optimize
 				optimizer.zero_grad()  # zero the gradient buffer

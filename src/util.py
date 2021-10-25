@@ -125,9 +125,8 @@ def load_pred_data(test_file, cell2id, zscore_method, train_std_file):
 
 def prepare_train_data(train_file, val_file, cell2id_mapping, zscore_method, std_file):
 	train_features, train_labels = load_train_data(train_file, cell2id_mapping, zscore_method, std_file)
-	# Construct sampler
-	weights = 1. / torch.tensor(np.unique(train_labels, return_counts=True), dtype=torch.float)
-	sample_weights = weights[torch.tensor(train_labels)]
+	weights = 1. / torch.tensor(np.unique(train_labels, return_counts=True)[1], dtype=torch.float) # class weights
+	sample_weights = weights[torch.tensor(train_labels).long()] # sample weights
 	val_features, val_labels = load_pred_data(val_file, cell2id_mapping, zscore_method, std_file)
 	return (torch.Tensor(train_features), torch.FloatTensor(train_labels), torch.Tensor(val_features), torch.FloatTensor(val_labels), sample_weights, weights)
 
@@ -169,8 +168,8 @@ def build_input_vector(input_data, cell_features):
 def create_term_mask(term_direct_gene_map, gene_dim, cuda_id):
 	term_mask_map = {}
 	for term, gene_set in term_direct_gene_map.items():
-		mask = torch.zeros(len(gene_set), gene_dim).cuda(cuda_id)
-		# mask = torch.zeros(len(gene_set), gene_dim)
+		# mask = torch.zeros(len(gene_set), gene_dim).cuda(cuda_id)
+		mask = torch.zeros(len(gene_set), gene_dim)
 		for i, gene_id in enumerate(gene_set):
 			mask[i, gene_id] = 1
 		term_mask_map[term] = mask

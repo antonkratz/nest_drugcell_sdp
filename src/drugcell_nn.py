@@ -121,7 +121,7 @@ class DrugCellNN(nn.Module):
 
 				self.add_module(term+'_linear_layer', nn.Linear(input_size, term_hidden))
 				self.add_module(term+'_batchnorm_layer', nn.BatchNorm1d(term_hidden))
-				self.add_module(term+'_aux_linear_layer1', nn.Linear(term_hidden,1))
+				self.add_module(term+'_aux_linear_layer1', nn.Linear(term_hidden, 3))
 				self.add_module(term+'_aux_linear_layer2', nn.Linear(1,1))
 
 			dG.remove_nodes_from(leaves)
