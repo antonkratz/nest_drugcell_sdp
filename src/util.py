@@ -133,11 +133,10 @@ def prepare_train_data(train_file, val_file, cell2id_mapping, zscore_method, std
 	return (torch.Tensor(train_features), torch.FloatTensor(train_labels), torch.Tensor(val_features), torch.FloatTensor(val_labels), sample_weights, weights)
 
 
-def prepare_predict_data(test_file, cell2id_mapping_file, drug2id_mapping_file, zscore_method, std_file):
+def prepare_predict_data(test_file, cell2id_mapping_file, zscore_method, std_file):
 	cell2id_mapping = load_mapping(cell2id_mapping_file, 'cell lines')
-	drug2id_mapping = load_mapping(drug2id_mapping_file, 'drugs')
-	test_features, test_labels = load_pred_data(test_file, cell2id_mapping, drug2id_mapping, zscore_method, std_file)
-	return (torch.Tensor(test_features), torch.Tensor(test_labels)), cell2id_mapping, drug2id_mapping
+	test_features, test_labels = load_pred_data(test_file, cell2id_mapping, zscore_method, std_file)
+	return (torch.Tensor(test_features), torch.Tensor(test_labels)), cell2id_mapping
 
 
 def load_mapping(mapping_file, mapping_type):
@@ -154,11 +153,9 @@ def load_mapping(mapping_file, mapping_type):
 
 def build_input_vector(input_data, cell_features):
 	genedim = len(cell_features[0,:])
-	# feature = np.zeros((input_data.size()[0], (genedim+drugdim)))
 	feature = np.zeros((input_data.size()[0], (genedim)))
 
 	for i in range(input_data.size()[0]):
-		# feature[i] = np.concatenate((cell_features[int(input_data[i,0])], drug_features[int(input_data[i,1])]), axis=None)
 		feature[i] = cell_features[int(input_data[i,0])]
 
 	feature = torch.from_numpy(feature).float()
@@ -171,7 +168,6 @@ def create_term_mask(term_direct_gene_map, gene_dim, cuda_id):
 	term_mask_map = {}
 	for term, gene_set in term_direct_gene_map.items():
 		mask = torch.zeros(len(gene_set), gene_dim).cuda(cuda_id)
-		# mask = torch.zeros(len(gene_set), gene_dim)
 		for i, gene_id in enumerate(gene_set):
 			mask[i, gene_id] = 1
 		term_mask_map[term] = mask
