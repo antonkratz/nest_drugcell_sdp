@@ -76,7 +76,7 @@ def predict_drugcell(predict_data, gene_dim, model_file, hidden_folder, batch_si
 
 	#test_corr = util.pearson_corr(test_predict, predict_label_gpu)
 	#test_corr = util.get_drug_corr_median(test_predict, predict_label_gpu, predict_feature)
-	val_corr = util.class_accuracy(val_predict, val_label_gpu)
+	test_corr = util.class_accuracy(test_predict, predict_label_gpu)
 	print("Test correlation\t%s\t%.6f" % (model.root, test_corr))
 
 	np.savetxt(result_file + '.txt', test_predict.cpu().numpy(),'%.4e')
