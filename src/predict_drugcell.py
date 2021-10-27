@@ -12,9 +12,9 @@ import torch.nn.functional as F
 import util
 
 
-def predict_drugcell(predict_data, gene_dim, drug_dim, model_file, hidden_folder, batch_size, result_file, cell_features, drug_features):
+def predict_drugcell(predict_data, gene_dim, model_file, hidden_folder, batch_size, result_file, cell_features):
 
-	feature_dim = gene_dim + drug_dim
+	feature_dim = gene_dim
 
 	model = torch.load(model_file, map_location='cuda:%d' % CUDA_ID)
 
@@ -39,7 +39,7 @@ def predict_drugcell(predict_data, gene_dim, drug_dim, model_file, hidden_folder
 
 	for i, (inputdata, labels) in enumerate(test_loader):
 		# Convert torch tensor to Variable
-		features = util.build_input_vector(inputdata, cell_features, drug_features)
+		features = util.build_input_vector(inputdata, cell_features)
 
 		cuda_features = Variable(features.cuda(CUDA_ID), requires_grad=True)
 
@@ -76,6 +76,7 @@ def predict_drugcell(predict_data, gene_dim, drug_dim, model_file, hidden_folder
 
 	test_corr = util.pearson_corr(test_predict, predict_label_gpu)
 	#test_corr = util.get_drug_corr_median(test_predict, predict_label_gpu, predict_feature)
+	# test_corr = util.class_accuracy(test_predict, predict_label_gpu)
 	print("Test correlation\t%s\t%.6f" % (model.root, test_corr))
 
 	np.savetxt(result_file + '.txt', test_predict.cpu().numpy(),'%.4e')
@@ -85,32 +86,27 @@ parser = argparse.ArgumentParser(description='Predict DrugCell')
 parser.add_argument('-predict', help='Dataset to be predicted', type=str)
 parser.add_argument('-batchsize', help='Batchsize', type=int, default=1000)
 parser.add_argument('-gene2id', help='Gene to ID mapping file', type=str)
-parser.add_argument('-drug2id', help='Drug to ID mapping file', type=str)
 parser.add_argument('-cell2id', help='Cell to ID mapping file', type=str)
 parser.add_argument('-load', help='Model file', type=str)
 parser.add_argument('-hidden', help='Hidden output folder', type=str, default='hidden/')
 parser.add_argument('-result', help='Result file prefix', type=str, default='result/predict')
 parser.add_argument('-cuda', help='Specify GPU', type=int, default=0)
 parser.add_argument('-genotype', help='Mutation information for cell lines', type=str)
-parser.add_argument('-fingerprint', help='Morgan fingerprint representation for drugs', type=str)
 parser.add_argument('-zscore_method', help='zscore method (zscore/robustz)', type=str)
 parser.add_argument('-std', help = 'Standardization File', type = str)
 
 opt = parser.parse_args()
 torch.set_printoptions(precision=5)
 
-predict_data, cell2id_mapping, drug2id_mapping = util.prepare_predict_data(opt.predict, opt.cell2id, opt.drug2id, opt.zscore_method, opt.std)
+predict_data, cell2id_mapping = util.prepare_predict_data(opt.predict, opt.cell2id, opt.zscore_method, opt.std)
 gene2id_mapping = util.load_mapping(opt.gene2id, "genes")
 
 # load cell/drug features
 cell_features = np.genfromtxt(opt.genotype, delimiter=',')
-drug_features = np.genfromtxt(opt.fingerprint, delimiter=',')
 
 num_cells = len(cell2id_mapping)
-num_drugs = len(drug2id_mapping)
 num_genes = len(gene2id_mapping)
-drug_dim = len(drug_features[0,:])
 
 CUDA_ID = opt.cuda
 
-predict_drugcell(predict_data, num_genes, drug_dim, opt.load, opt.hidden, opt.batchsize, opt.result, cell_features, drug_features)
+predict_drugcell(predict_data, num_genes, opt.load, opt.hidden, opt.batchsize, opt.result, cell_features)
