@@ -183,5 +183,5 @@ class OptunaNNTrainer(NNTrainer):
 		for key, value in trial.params.items():
 			print("{}: {}".format(key, value))
 
-		fig_params = optuna.visualization.plot_param_importances(study)
-		fig_params.save(self.data_wrapper.modeldir + "/param_importance.png")
+		# fig_params = optuna.visualization.plot_param_importances(study)
+		# fig_params.save(self.data_wrapper.modeldir + "/param_importance.png")
