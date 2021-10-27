@@ -11,6 +11,11 @@ dataFile="${datadir}/train_${dataset}_${drug}.txt"
 trainFile="train_${dataset}_${drug}.txt"
 testFile="test_${dataset}_${drug}.txt"
 
+datadir="${homedir}/data/training_files"
+dataFile="${datadir}/train_${dataset}_${drug}.txt"
+trainFile="train_${dataset}_${drug}.txt"
+testFile="test_${dataset}_${drug}.txt"
+
 lc=`cat ${dataFile} | wc -l`
 
 min=$(( ($lc * (${i} - 1)) / ${folds} + 1 ))

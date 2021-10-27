@@ -22,8 +22,8 @@ class GradientNNTrainer(NNTrainer):
 		epoch_start_time = time.time()
 		max_corr = 0.0
 
-		train_feature, train_label, val_feature, val_label = self.data_wrapper.prepare_train_data()
-		# train_feature, train_label, val_feature, val_label, sample_weights, class_weights = self.data_wrapper.prepare_train_data()
+		#train_feature, train_label, val_feature, val_label = self.data_wrapper.prepare_train_data()
+		train_feature, train_label, val_feature, val_label, sample_weights, class_weights = self.data_wrapper.prepare_train_data()
 
 		# sampler = nn.WeightedRandomSampler(
 		#	weights=sample_weights,
@@ -90,9 +90,9 @@ class GradientNNTrainer(NNTrainer):
 				optimizer.step()
 
 			gradnorms = sum(_gradnorms).unsqueeze(0).cpu().numpy()[0] # Save total gradnorm for epoch
-			train_corr = util.pearson_corr(train_predict, train_label_gpu)
-			# train_corr = util.get_drug_corr_median(train_predict, train_label_gpu, train_feature)
-			# train_corr = util.class_accuracy(train_predict, train_label_gpu)
+			#train_corr = util.pearson_corr(train_predict, train_label_gpu)
+			#train_corr = util.get_drug_corr_median(train_predict, train_label_gpu, train_feature)
+			train_corr = util.class_accuracy(train_predict, train_label_gpu)
 
 			self.model.eval()
 
@@ -109,9 +109,9 @@ class GradientNNTrainer(NNTrainer):
 				else:
 					val_predict = torch.cat([val_predict, aux_out_map['final'].data], dim=0)
 
-			val_corr = util.pearson_corr(val_predict, val_label_gpu)
-			# val_corr = util.get_drug_corr_median(val_predict, val_label_gpu, val_feature)
-			# val_corr = util.class_accuracy(val_predict, val_label_gpu)
+			# val_corr = util.pearson_corr(val_predict, val_label_gpu)
+			#val_corr = util.get_drug_corr_median(val_predict, val_label_gpu, val_feature)
+			val_corr = util.class_accuracy(val_predict, val_label_gpu)
 
 			if val_corr >= max_corr:
 				max_corr = val_corr

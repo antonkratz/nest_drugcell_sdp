@@ -43,7 +43,7 @@ def class_accuracy(y_pred, y_test): # adapted from https://towardsdatascience.co
 	y_pred_softmax = torch.log_softmax(y_pred, dim = 1)
 	_, y_pred_tags = torch.max(y_pred_softmax, dim = 1)
 
-	correct_pred = (y_pred_tags == y_test).float()
+	correct_pred = (y_pred_tags == y_test.squeeze()).float()
 	acc = correct_pred.sum() / len(correct_pred)
 
 	acc = torch.round(acc * 100)
@@ -124,14 +124,17 @@ def load_pred_data(test_file, cell2id, zscore_method, train_std_file):
 	return feature, label
 
 
-def prepare_train_data(train_file, cell2id_mapping, zscore_method, std_file):
+def prepare_train_data(train_file, val_file, cell2id_mapping, zscore_method, std_file):
+
 	train_f, train_l = load_train_data(train_file, cell2id_mapping, zscore_method, std_file)
+
 	train_features, val_features, train_labels, val_labels = train_test_split(train_f, train_l, test_size=0.2, shuffle=True)
+
 	# Construct sampler
-	# weights = 1. / torch.tensor(np.unique(train_labels, return_counts=True), dtype=torch.float)
-	# sample_weights = weights[torch.tensor(train_labels)]
-	# return (torch.Tensor(train_features), torch.FloatTensor(train_labels), torch.Tensor(val_features), torch.FloatTensor(val_labels), sample_weights, weights)
-	return (torch.Tensor(train_features), torch.FloatTensor(train_labels), torch.Tensor(val_features), torch.FloatTensor(val_labels))
+	class_counts = np.unique(train_labels, return_counts=True)[1]
+	weights = 1. / torch.tensor(class_counts, dtype=torch.float)
+	sample_weights = weights[torch.tensor(train_labels).long()]
+	return (torch.Tensor(train_features), torch.FloatTensor(train_labels), torch.Tensor(val_features), torch.FloatTensor(val_labels), sample_weights, weights)
 
 
 def prepare_predict_data(test_file, cell2id_mapping_file, zscore_method, std_file):

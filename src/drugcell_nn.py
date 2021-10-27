@@ -15,6 +15,7 @@ class DrugCellNN(nn.Module):
 
 		self.root = data_wrapper.root
 		self.num_hiddens_genotype = data_wrapper.num_hiddens_genotype
+		self.n_classes = data_wrapper.n_classes
 
 		# dictionary from terms to genes directly annotated with the term
 		self.term_direct_gene_map = data_wrapper.term_direct_gene_map
@@ -30,9 +31,8 @@ class DrugCellNN(nn.Module):
 		self.construct_NN_graph(data_wrapper.dG)
 
 		# add module for final layer
-		self.add_module('final_aux_linear_layer', nn.Linear(data_wrapper.num_hiddens_genotype, 1))
-		self.add_module('final_linear_layer_output', nn.Linear(1, 1))
-		#self.add_module('final_linear_layer_output', nn.Linear(data_wrapper.num_hiddens_final, data_wrapper.n_classes))
+		# self.add_module('final_linear_layer_output', nn.Linear(1, 1))
+		self.add_module('final_linear_layer_output', nn.Linear(data_wrapper.num_hiddens_final, data_wrapper.n_classes))
 
 
 	# calculate the number of values in a state (term)
@@ -97,8 +97,10 @@ class DrugCellNN(nn.Module):
 
 				self.add_module(term+'_linear_layer', nn.Linear(input_size, term_hidden))
 				self.add_module(term+'_batchnorm_layer', nn.BatchNorm1d(term_hidden))
-				self.add_module(term+'_aux_linear_layer1', nn.Linear(term_hidden, 3))
-				self.add_module(term+'_aux_linear_layer2', nn.Linear(1,1))
+				# self.add_module(term+'_aux_linear_layer1', nn.Linear(term_hidden, 1))
+				# self.add_module(term+'_aux_linear_layer2', nn.Linear(1,1))
+				self.add_module(term+'_aux_linear_layer2', nn.Linear(term_hidden, self.n_classes))
+				
 
 			dG.remove_nodes_from(leaves)
 
@@ -134,11 +136,11 @@ class DrugCellNN(nn.Module):
 
 				Tanh_out = torch.tanh(term_NN_out)
 				term_NN_out_map[term] = self._modules[term+'_batchnorm_layer'](Tanh_out)
-				aux_layer1_out = torch.tanh(self._modules[term+'_aux_linear_layer1'](term_NN_out_map[term]))
-				aux_out_map[term] = self._modules[term+'_aux_linear_layer2'](aux_layer1_out)
+				# aux_layer1_out = torch.tanh(self._modules[term+'_aux_linear_layer1'](term_NN_out_map[term]))
+				# aux_out_map[term] = self._modules[term+'_aux_linear_layer2'](aux_layer1_out)
+				aux_out_map[term] = self._modules[term+'_aux_linear_layer2'](term_NN_out_map[term])
 
 		final_input = term_NN_out_map[self.root]
-		aux_layer_out = torch.tanh(self._modules['final_aux_linear_layer'](final_input))
-		aux_out_map['final'] = self._modules['final_linear_layer_output'](aux_layer_out)
+		aux_out_map['final'] = self._modules['final_linear_layer_output'](final_input)
 
 		return aux_out_map, term_NN_out_map

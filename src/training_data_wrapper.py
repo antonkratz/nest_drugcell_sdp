@@ -26,6 +26,7 @@ class TrainingDataWrapper():
 		self.zscore_method = args.zscore_method
 		self.std = args.std
 		self.n_classes = args.n_classes
+		self.num_hiddens_final = args.final_hiddens
 		self.load_ontology(args.onto)
 
 

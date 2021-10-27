@@ -94,8 +94,8 @@ class OptunaNNTrainer(NNTrainer):
 
 				total_loss = 0
 				for name, output in aux_out_map.items():
-					loss = nn.MSELoss()
-					#loss = nn.CrossEntropyLoss(weight=class_weights)
+					# loss = nn.MSELoss()
+					loss = nn.CrossEntropyLoss(weight=class_weights)
 					if name == 'final':
 						total_loss += loss(output, cuda_labels)
 					else:
@@ -110,9 +110,9 @@ class OptunaNNTrainer(NNTrainer):
 
 				optimizer.step()
 
-			train_corr = util.pearson_corr(train_predict, train_label_gpu)
-			# train_corr = util.get_drug_corr_median(train_predict, train_label_gpu, train_feature)
-			# train_corr = util.class_accuracy(train_predict, train_label_gpu)
+			#train_corr = util.pearson_corr(train_predict, train_label_gpu)
+			#train_corr = util.get_drug_corr_median(train_predict, train_label_gpu, train_feature)
+			train_corr = util.class_accuracy(train_predict, train_label_gpu)
 
 			self.model.eval()
 
@@ -129,9 +129,9 @@ class OptunaNNTrainer(NNTrainer):
 				else:
 					val_predict = torch.cat([val_predict, aux_out_map['final'].data], dim=0)
 
-			val_corr = util.pearson_corr(val_predict, val_label_gpu)
-			# val_corr = util.get_drug_corr_median(val_predict, val_label_gpu, val_feature)
-			# val_corr = util.class_accuracy(val_predict, val_label_gpu)
+			# val_corr = util.pearson_corr(val_predict, val_label_gpu)
+			#val_corr = util.get_drug_corr_median(val_predict, val_label_gpu, val_feature)
+			val_corr = util.class_accuracy(val_predict, val_label_gpu)
 
 			if val_corr >= max_corr:
 				max_corr = val_corr
