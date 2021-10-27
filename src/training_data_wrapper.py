@@ -23,7 +23,6 @@ class TrainingDataWrapper():
 		self.modeldir = args.modeldir
 		self.cuda = args.cuda
 		self.train = args.train
-		self.val = args.val
 		self.zscore_method = args.zscore_method
 		self.std = args.std
 		self.n_classes = args.n_classes
@@ -31,7 +30,7 @@ class TrainingDataWrapper():
 
 
 	def prepare_train_data(self):
-		return util.prepare_train_data(self.train, self.val, self.cell_id_mapping, self.zscore_method, self.std)
+		return util.prepare_train_data(self.train, self.cell_id_mapping, self.zscore_method, self.std)
 
 	def load_ontology(self, file_name):
 

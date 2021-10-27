@@ -124,13 +124,14 @@ def load_pred_data(test_file, cell2id, zscore_method, train_std_file):
 	return feature, label
 
 
-def prepare_train_data(train_file, val_file, cell2id_mapping, zscore_method, std_file):
+def prepare_train_data(train_file, cell2id_mapping, zscore_method, std_file):
 	train_f, train_l = load_train_data(train_file, cell2id_mapping, zscore_method, std_file)
-	train_features, train_labels, val_features, val_labels = train_test_split(train_f, train_l, test_size=0.2, shuffle=True)
+	train_features, val_features, train_labels, val_labels = train_test_split(train_f, train_l, test_size=0.2, shuffle=True)
 	# Construct sampler
-	weights = 1. / torch.tensor(np.unique(train_labels, return_counts=True), dtype=torch.float)
-	sample_weights = weights[torch.tensor(train_labels)]
-	return (torch.Tensor(train_features), torch.FloatTensor(train_labels), torch.Tensor(val_features), torch.FloatTensor(val_labels), sample_weights, weights)
+	# weights = 1. / torch.tensor(np.unique(train_labels, return_counts=True), dtype=torch.float)
+	# sample_weights = weights[torch.tensor(train_labels)]
+	# return (torch.Tensor(train_features), torch.FloatTensor(train_labels), torch.Tensor(val_features), torch.FloatTensor(val_labels), sample_weights, weights)
+	return (torch.Tensor(train_features), torch.FloatTensor(train_labels), torch.Tensor(val_features), torch.FloatTensor(val_labels))
 
 
 def prepare_predict_data(test_file, cell2id_mapping_file, zscore_method, std_file):
