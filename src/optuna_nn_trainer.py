@@ -45,8 +45,8 @@ class OptunaNNTrainer(NNTrainer):
 
 		self.setup_trials(trial)
 
-		train_feature, train_label, val_feature, val_label = self.data_wrapper.prepare_train_data()
-		# train_feature, train_label, val_feature, val_label, sample_weights, class_weights = self.data_wrapper.prepare_train_data()
+		# train_feature, train_label, val_feature, val_label = self.data_wrapper.prepare_train_data()
+		train_feature, train_label, val_feature, val_label, sample_weights, class_weights = self.data_wrapper.prepare_train_data()
 
 		# sampler = nn.WeightedRandomSampler(
 		#	weights=sample_weights,
@@ -97,9 +97,9 @@ class OptunaNNTrainer(NNTrainer):
 					# loss = nn.MSELoss()
 					loss = nn.CrossEntropyLoss(weight=class_weights)
 					if name == 'final':
-						total_loss += loss(output, cuda_labels)
+						total_loss += loss(output, cuda_labels.squeeze().long())
 					else:
-						total_loss += self.data_wrapper.alpha * loss(output, cuda_labels)
+						total_loss += self.data_wrapper.alpha * loss(output, cuda_labels.squeeze().long())
 				total_loss.backward()
 
 				for name, param in self.model.named_parameters():
