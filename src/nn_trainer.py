@@ -11,18 +11,6 @@ import util
 from training_data_wrapper import *
 from drugcell_nn import *
 
-class ClassifierDataset():
-    
-    def __init__(self, X_data, y_data):
-        self.X_data = X_data
-        self.y_data = y_data
-        
-    def __getitem__(self, index):
-        return self.X_data[index], self.y_data[index]
-        
-    def __len__ (self):
-        return len(self.X_data)
-
 class NNTrainer():
 
 	def __init__(self, opt):
@@ -54,12 +42,15 @@ class NNTrainer():
 			else:
 				param.data = param.data * 0.1
 
-		# train_label_gpu = Variable(train_label.cuda(self.data_wrapper.cuda))
-		# val_label_gpu = Variable(val_label.cuda(self.data_wrapper.cuda))
-		train_label_gpu = Variable(train_label)
-		val_label_gpu = Variable(val_label)
+		train_label_gpu = Variable(train_label.cuda(self.data_wrapper.cuda))
+		val_label_gpu = Variable(val_label.cuda(self.data_wrapper.cuda))
+		# train_label_gpu = Variable(train_label)
+		# val_label_gpu = Variable(val_label)
+
 		train_loader = du.DataLoader(du.TensorDataset(train_feature, train_label), batch_size=self.data_wrapper.batchsize, shuffle=True)
+		val_loader = du.DataLoader(du.TensorDataset(val_feature, val_label), batch_size=self.data_wrapper.batchsize, shuffle=True)
 		# train_loader = du.DataLoader(dataset = du.TensorDataset(train_feature, train_label), batch_size=self.data_wrapper.batchsize, sampler=sampler, drop_last=True)
+
 
 		optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.data_wrapper.lr, betas=(0.9, 0.99), eps=1e-05, weight_decay=self.data_wrapper.wd)
 		optimizer.zero_grad()
@@ -67,8 +58,8 @@ class NNTrainer():
 		for epoch in range(self.data_wrapper.epochs):
 			# Train
 			self.model.train()
-			# train_predict = torch.zeros(0, 0).cuda(self.data_wrapper.cuda)
-			train_predict = torch.zeros(0, 0)
+			train_predict = torch.zeros(0, 0).cuda(self.data_wrapper.cuda)
+			# train_predict = torch.zeros(0, 0)
 
 			for i, (inputdata, labels) in enumerate(train_loader):
 				# Convert torch tensor to Variable
@@ -88,8 +79,8 @@ class NNTrainer():
 
 				total_loss = 0
 				for name, output in aux_out_map.items():
-					loss = nn.MSELoss()
-					#loss = nn.CrossEntropyLoss(weight=class_weights)
+					# loss = nn.MSELoss()
+					loss = nn.CrossEntropyLoss(weight=class_weights) # Classification
 					if name == 'final':
 						total_loss += loss(output, cuda_labels.squeeze().long())
 					else:
@@ -110,13 +101,14 @@ class NNTrainer():
 
 			self.model.eval()
 
-			# val_predict = torch.zeros(0, 0).cuda(self.data_wrapper.cuda)
-			val_predict = torch.zeros(0, 0)
+			val_predict = torch.zeros(0, 0).cuda(self.data_wrapper.cuda)
+			# val_predict = torch.zeros(0, 0)
 
 			for i, (inputdata, labels) in enumerate(val_loader):
 				# Convert torch tensor to Variable
 				features = util.build_input_vector(inputdata, self.data_wrapper.cell_features)
 				cuda_features = Variable(features.cuda(self.data_wrapper.cuda))
+				# cuda_features = Variable(features)
 				aux_out_map, _ = self.model(cuda_features)
 
 				if val_predict.size()[0] == 0:

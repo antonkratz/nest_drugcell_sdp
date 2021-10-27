@@ -124,7 +124,7 @@ def load_pred_data(test_file, cell2id, zscore_method, train_std_file):
 	return feature, label
 
 
-def prepare_train_data(train_file, val_file, cell2id_mapping, zscore_method, std_file):
+def prepare_train_data(train_file, cell2id_mapping, zscore_method, std_file):
 
 	train_f, train_l = load_train_data(train_file, cell2id_mapping, zscore_method, std_file)
 
@@ -171,7 +171,8 @@ def build_input_vector(input_data, cell_features):
 def create_term_mask(term_direct_gene_map, gene_dim, cuda_id):
 	term_mask_map = {}
 	for term, gene_set in term_direct_gene_map.items():
-		mask = torch.zeros(len(gene_set), gene_dim).cuda(cuda_id)
+		# mask = torch.zeros(len(gene_set), gene_dim).cuda(cuda_id)
+		mask = torch.zeros(len(gene_set), gene_dim)
 		for i, gene_id in enumerate(gene_set):
 			mask[i, gene_id] = 1
 		term_mask_map[term] = mask
