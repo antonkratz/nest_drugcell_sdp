@@ -32,11 +32,18 @@ def main():
 	opt = parser.parse_args()
 
 	if opt.optimize == 0:
-		predicted_label = NNTrainer(opt).train_model()
+		NNTrainer(opt).train_model()
+
 	elif opt.optimize == 1:
-		predicted_label = GradientNNTrainer(opt).train_model()
+		GradientNNTrainer(opt).train_model()
+
 	elif opt.optimize == 2:
-		OptunaNNTrainer(opt).exec_study()
+		trial_params = OptunaNNTrainer(opt).exec_study()
+		for key, value in trial_params.items():
+			if hasattr(opt, key):
+				setattr(opt, key, value)
+		GradientNNTrainer(opt).train_model()
+
 	else:
 		print("Wrong value for optimize.")
 		exit(1)

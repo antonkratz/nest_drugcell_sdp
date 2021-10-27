@@ -23,7 +23,7 @@ class OptunaNNTrainer(NNTrainer):
 	def exec_study(self):
 		study = optuna.create_study(direction="maximize")
 		study.optimize(self.train_model, n_trials=50)
-		self.print_result(study)
+		return self.print_result(study)
 
 
 	def setup_trials(self, trial):
@@ -183,5 +183,4 @@ class OptunaNNTrainer(NNTrainer):
 		for key, value in trial.params.items():
 			print("{}: {}".format(key, value))
 
-		# fig_params = optuna.visualization.plot_param_importances(study)
-		# fig_params.save(self.data_wrapper.modeldir + "/param_importance.png")
+		return trial.params
