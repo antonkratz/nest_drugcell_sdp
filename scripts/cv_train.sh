@@ -26,5 +26,5 @@ source activate cuda11_env
 
 python -u $pyScript -onto $ontfile -gene2id $gene2idfile -cell2id $cell2idfile \
 	-train $traindatafile -genotype $mutationfile -std $stdfile -model $modeldir \
-	-genotype_hiddens 2 -lr 0.0005 -wd 0.0001 -alpha 0.2 -cuda $cudaid -epoch 50 \
-	-batchsize 100 -optimize 2 -zscore_method $zscore_method > "${modeldir}/train.log"
+	-genotype_hiddens 2 -lr 0.003 -wd 0.0006 -alpha 0.5 -cuda $cudaid -epoch 100 \
+	-batchsize 64 -optimize 2 -zscore_method $zscore_method > "${modeldir}/train.log"
