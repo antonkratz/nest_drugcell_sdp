@@ -16,6 +16,13 @@ def pearson_corr(x, y):
 	return torch.sum(xx*yy) / (torch.norm(xx, 2)*torch.norm(yy,2))
 
 
+def spearman_corr(torch_pred, torch_labels):
+	pred = torch_pred.cpu().numpy()
+	labels = torch_labels.cpu().numpy()
+	corr = stats.spearmanr(pred, labels)[0]
+	return corr
+
+
 def get_drug_corr_median(torch_pred, torch_labels, torch_inputdata):
 
 	pred = torch_pred.cpu().numpy()
