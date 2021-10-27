@@ -48,7 +48,7 @@ class GradientNNTrainer(NNTrainer):
 		optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.data_wrapper.lr, betas=(0.9, 0.99), eps=1e-05, weight_decay=self.data_wrapper.wd)
 		optimizer.zero_grad()
 
-		print("epoch\ttrain_corr\ttrain_loss\ttrain_median_auc\tval_corr\tval_loss\tgrad_norm\telapsed_time")
+		print("epoch\ttrain_corr\ttrain_loss\ttrue_auc\tpred_auc\tval_corr\tval_loss\tgrad_norm\telapsed_time")
 		for epoch in range(self.data_wrapper.epochs):
 			# Train
 			self.model.train()
@@ -133,8 +133,9 @@ class GradientNNTrainer(NNTrainer):
 				print("Model saved at epoch {}".format(epoch))
 
 			epoch_end_time = time.time()
-			train_median_auc = torch.median(train_predict)
-			print("{}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{}".format(epoch, train_corr, total_loss, train_median_auc, val_corr, val_loss, gradnorms, epoch_end_time - epoch_start_time))
+			true_auc = torch.median(train_label_gpu)
+			pred_auc = torch.median(train_predict)
+			print("{}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}".format(epoch, train_corr, total_loss, true_auc, pred_auc, val_corr, val_loss, gradnorms, epoch_end_time - epoch_start_time))
 			epoch_start_time = epoch_end_time
 
 		return max_corr
