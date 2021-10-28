@@ -82,8 +82,10 @@ class NNTrainer():
 					# loss = nn.MSELoss()
 					loss = nn.CrossEntropyLoss(weight=class_weights) # Classification
 					if name == 'final':
+						# total_loss += loss(output, cuda_labels)
 						total_loss += loss(output, cuda_labels.squeeze().long())
 					else:
+						# total_loss += self.data_wrapper.alpha * loss(output, cuda_labels)
 						total_loss += self.data_wrapper.alpha * loss(output, cuda_labels.squeeze().long())
 				total_loss.backward()
 
@@ -121,11 +123,13 @@ class NNTrainer():
 
 				val_loss = 0
 				for name, output in aux_out_map.items():
-					loss = nn.MSELoss()
-					#loss = nn.CrossEntropyLoss(weight=class_weights)
+					# loss = nn.MSELoss()
+					loss = nn.CrossEntropyLoss(weight=class_weights)
 					if name == 'final':
+						# val_loss += loss(output, cuda_labels)
 						val_loss += loss(output, cuda_labels.squeeze().long())
 					else:
+						# val_loss += self.data_wrapper.alpha * loss(output, cuda_labels)
 						val_loss += self.data_wrapper.alpha * loss(output, cuda_labels.squeeze().long())
 
 			# val_corr = util.pearson_corr(val_predict, val_label_gpu)

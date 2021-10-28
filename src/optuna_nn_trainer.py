@@ -101,7 +101,7 @@ class OptunaNNTrainer(NNTrainer):
 						# total_loss += loss(output, cuda_labels)
 						total_loss += loss(output, cuda_labels.squeeze().long())
 					else:
-						total_loss += loss(output, cuda_labels)
+						# total_loss += loss(output, cuda_labels)
 						total_loss += self.data_wrapper.alpha * loss(output, cuda_labels.squeeze().long())
 				total_loss.backward()
 
@@ -139,8 +139,10 @@ class OptunaNNTrainer(NNTrainer):
 					# loss = nn.MSELoss()
 					loss = nn.CrossEntropyLoss(weight=class_weights)
 					if name == 'final':
+						# val_loss += loss(output, cuda_labels)
 						val_loss += loss(output, cuda_labels.squeeze().long())
 					else:
+						# val_loss += self.data_wrapper.alpha * loss(output, cuda_labels)
 						val_loss += self.data_wrapper.alpha * loss(output, cuda_labels.squeeze().long())
 
 			# val_corr = util.pearson_corr(val_predict, val_label_gpu)
