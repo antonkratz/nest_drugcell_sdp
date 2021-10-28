@@ -8,7 +8,7 @@ ontfile="${homedir}/data/ontology_${2}_${3}.txt"
 mutationfile="${homedir}/data/cell2mutation_${2}_${3}.txt"
 traindatafile="${homedir}/data/training_files/${6}_train_${3}_${4}.txt"
 
-modeldir="${homedir}/model_${3}_${4}_${5}_${6}"
+modeldir="${homedir}/models/model_${3}_${4}_${5}_${6}"
 if [ -d $modeldir ]
 then
 	rm -rf $modeldir

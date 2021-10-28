@@ -23,6 +23,7 @@ def main():
 	parser.add_argument('-gene2id', help = 'Gene to ID mapping file', type = str)
 	parser.add_argument('-cell2id', help = 'Cell to ID mapping file', type = str)
 	parser.add_argument('-genotype_hiddens', help = 'Mapping for the number of neurons in each term in genotype parts', type = int, default = 6)
+	parser.add_argument('-final_hiddens', help = 'The number of neurons in the top layer', type = int, default = 6)
 	parser.add_argument('-genotype', help = 'Mutation information for cell lines', type = str)
 	parser.add_argument('-optimize', help = 'Hyper-parameter optimization', type = int, default = 0)
 	parser.add_argument('-zscore_method', help='zscore method (zscore/robustz)', type=str)
@@ -32,14 +33,22 @@ def main():
 	opt = parser.parse_args()
 
 	if opt.optimize == 0:
-		predicted_label = NNTrainer(opt).train_model()
+		NNTrainer(opt).train_model()
+
 	elif opt.optimize == 1:
-		predicted_label = GradientNNTrainer(opt).train_model()
+		GradientNNTrainer(opt).train_model()
+
 	elif opt.optimize == 2:
-		OptunaNNTrainer(opt).exec_study()
+		trial_params = OptunaNNTrainer(opt).exec_study()
+		for key, value in trial_params.items():
+			if hasattr(opt, key):
+				setattr(opt, key, value)
+		GradientNNTrainer(opt).train_model()
+
 	else:
 		print("Wrong value for optimize.")
 		exit(1)
+
 
 if __name__ == "__main__":
 	main()

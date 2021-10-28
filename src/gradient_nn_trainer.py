@@ -48,6 +48,7 @@ class GradientNNTrainer(NNTrainer):
 		optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.data_wrapper.lr, betas=(0.9, 0.99), eps=1e-05, weight_decay=self.data_wrapper.wd)
 		optimizer.zero_grad()
 
+		print("epoch\ttrain_corr\ttrain_loss\ttrue_auc\tpred_auc\tval_corr\tval_loss\tgrad_norm\telapsed_time")
 		for epoch in range(self.data_wrapper.epochs):
 			# Train
 			self.model.train()
@@ -72,12 +73,12 @@ class GradientNNTrainer(NNTrainer):
 
 				total_loss = 0
 				for name, output in aux_out_map.items():
-					loss = nn.MSELoss()
-					# loss = nn.CrossEntropyLoss(weight=class_weights)
+					# loss = nn.MSELoss()
+					loss = nn.CrossEntropyLoss(weight=class_weights)
 					if name == 'final':
-						total_loss += loss(output, cuda_labels)
+						total_loss += loss(output, cuda_labels.squeeze().long())
 					else:
-						total_loss += self.data_wrapper.alpha * loss(output, cuda_labels)
+						total_loss += self.data_wrapper.alpha * loss(output, cuda_labels.squeeze().long())
 				total_loss.backward()
 
 				for name, param in self.model.named_parameters():
@@ -102,12 +103,23 @@ class GradientNNTrainer(NNTrainer):
 				# Convert torch tensor to Variable
 				features = util.build_input_vector(inputdata, self.data_wrapper.cell_features)
 				cuda_features = Variable(features.cuda(self.data_wrapper.cuda))
+				cuda_labels = Variable(labels.cuda(self.data_wrapper.cuda))
+
 				aux_out_map, _ = self.model(cuda_features)
 
 				if val_predict.size()[0] == 0:
 					val_predict = aux_out_map['final'].data
 				else:
 					val_predict = torch.cat([val_predict, aux_out_map['final'].data], dim=0)
+
+				val_loss = 0
+				for name, output in aux_out_map.items():
+					# loss = nn.MSELoss()
+					loss = nn.CrossEntropyLoss(weight=class_weights)
+					if name == 'final':
+						val_loss += loss(output, cuda_labels.squeeze().long())
+					else:
+						val_loss += self.data_wrapper.alpha * loss(output, cuda_labels.squeeze().long())
 
 			# val_corr = util.pearson_corr(val_predict, val_label_gpu)
 			#val_corr = util.get_drug_corr_median(val_predict, val_label_gpu, val_feature)
@@ -119,7 +131,9 @@ class GradientNNTrainer(NNTrainer):
 				print("Model saved at epoch {}".format(epoch))
 
 			epoch_end_time = time.time()
-			print("epoch {}\ttrain_corr {:.5f}\tval_corr {:.5f}\ttotal_loss {:.3f}\tgrad_norm {:.3f}\telapsed_time {}".format(epoch, train_corr, val_corr, total_loss, gradnorms, epoch_end_time - epoch_start_time))
+			true_auc = torch.median(train_label_gpu)
+			pred_auc = torch.median(train_predict)
+			print("{}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}".format(epoch, train_corr, total_loss, true_auc, pred_auc, val_corr, val_loss, gradnorms, epoch_end_time - epoch_start_time))
 			epoch_start_time = epoch_end_time
 
 		return max_corr

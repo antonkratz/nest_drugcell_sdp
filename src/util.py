@@ -39,7 +39,8 @@ def get_drug_corr_median(torch_pred, torch_labels, torch_inputdata):
 	return np.median(corr_list)
 
 
-def class_accuracy(y_pred, y_test): # adapted from https://towardsdatascience.com/pytorch-tabular-multiclass-classification-9f8211a123ab
+# adapted from https://towardsdatascience.com/pytorch-tabular-multiclass-classification-9f8211a123ab
+def class_accuracy(y_pred, y_test):
 	y_pred_softmax = torch.log_softmax(y_pred, dim = 1)
 	_, y_pred_tags = torch.max(y_pred_softmax, dim = 1)
 

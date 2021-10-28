@@ -23,16 +23,16 @@ class OptunaNNTrainer(NNTrainer):
 	def exec_study(self):
 		study = optuna.create_study(direction="maximize")
 		study.optimize(self.train_model, n_trials=50)
-		self.print_result(study)
+		return self.print_result(study)
 
 
 	def setup_trials(self, trial):
 
-		self.data_wrapper.genotype_hiddens = trial.suggest_categorical("genotype_hiddens", [1, 2, 4, 6])
+		self.data_wrapper.genotype_hiddens = trial.suggest_categorical("genotype_hiddens", [1, 2, 4, 6, 8, 10])
 		self.data_wrapper.lr = trial.suggest_float("lr", 1e-4, 5e-1, log=True)
-		# self.data_wrapper.wd = trial.suggest_float("weight_decay", 5e-5, 1e-2, log=True)
-		self.data_wrapper.alpha = trial.suggest_categorical("alpha", [0.2, 0.4, 0.6, 0.8, 1.0])
-		self.data_wrapper.batchsize = trial.suggest_categorical("batchsize", [32, 64, 96, 128])
+		self.data_wrapper.wd = trial.suggest_float("wd", 5e-5, 1e-1, log=True)
+		#self.data_wrapper.alpha = trial.suggest_categorical("alpha", [0.2, 0.4, 0.6, 0.8, 1.0])
+		#self.data_wrapper.batchsize = trial.suggest_categorical("batchsize", [32, 64, 96, 128])
 
 		for key, value in trial.params.items():
 			print("{}: {}".format(key, value))
@@ -68,9 +68,10 @@ class OptunaNNTrainer(NNTrainer):
 		# train_loader = du.DataLoader(du.TensorDataset(train_feature, train_label), batch_size=self.data_wrapper.batchsize, shuffle=True, sampler=sampler)
 		val_loader = du.DataLoader(du.TensorDataset(val_feature, val_label), batch_size=self.data_wrapper.batchsize, shuffle=True)
 
-		optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.data_wrapper.lr, betas=(0.9, 0.99), eps=1e-05, weight_decay=self.data_wrapper.lr/5)
+		optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.data_wrapper.lr, betas=(0.9, 0.99), eps=1e-05, weight_decay=self.data_wrapper.wd)
 		optimizer.zero_grad()
 
+		print("epoch\ttrain_corr\ttrain_loss\ttrue_auc\tpred_auc\tval_corr\tval_loss\telapsed_time")
 		for epoch in range(self.data_wrapper.epochs):
 			# Train
 			self.model.train()
@@ -122,6 +123,8 @@ class OptunaNNTrainer(NNTrainer):
 				# Convert torch tensor to Variable
 				features = util.build_input_vector(inputdata, self.data_wrapper.cell_features)
 				cuda_features = Variable(features.cuda(self.data_wrapper.cuda))
+				cuda_labels = Variable(labels.cuda(self.data_wrapper.cuda))
+
 				aux_out_map, _ = self.model(cuda_features)
 
 				if val_predict.size()[0] == 0:
@@ -129,8 +132,17 @@ class OptunaNNTrainer(NNTrainer):
 				else:
 					val_predict = torch.cat([val_predict, aux_out_map['final'].data], dim=0)
 
+				val_loss = 0
+				for name, output in aux_out_map.items():
+					# loss = nn.MSELoss()
+					loss = nn.CrossEntropyLoss(weight=class_weights)
+					if name == 'final':
+						val_loss += loss(output, cuda_labels.squeeze().long())
+					else:
+						val_loss += self.data_wrapper.alpha * loss(output, cuda_labels.squeeze().long())
+
 			# val_corr = util.pearson_corr(val_predict, val_label_gpu)
-			#val_corr = util.get_drug_corr_median(val_predict, val_label_gpu, val_feature)
+			# val_corr = util.get_drug_corr_median(val_predict, val_label_gpu, val_feature)
 			val_corr = util.class_accuracy(val_predict, val_label_gpu)
 
 			if val_corr >= max_corr:
@@ -139,7 +151,9 @@ class OptunaNNTrainer(NNTrainer):
 			trial.report(val_corr, epoch)
 
 			epoch_end_time = time.time()
-			print("epoch {}\ttrain_corr {:.5f}\tval_corr {:.5f}\ttotal_loss {:.3f}\telapsed_time {}".format(epoch, train_corr, val_corr, total_loss, epoch_end_time - epoch_start_time))
+			true_auc = torch.median(train_label_gpu)
+			pred_auc = torch.median(train_predict)
+			print("{}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}".format(epoch, train_corr, total_loss, true_auc, pred_auc, val_corr, val_loss, epoch_end_time - epoch_start_time))
 			epoch_start_time = epoch_end_time
 
 		# Handle pruning based on the intermediate value.
@@ -168,5 +182,4 @@ class OptunaNNTrainer(NNTrainer):
 		for key, value in trial.params.items():
 			print("{}: {}".format(key, value))
 
-		fig_params = optuna.visualization.plot_param_importances(study)
-		fig_params.save(self.data_wrapper.modeldir + "/param_importance.png")
+		return trial.params

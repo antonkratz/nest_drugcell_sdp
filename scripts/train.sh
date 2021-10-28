@@ -25,6 +25,6 @@ pyScript="${homedir}/src/train_drugcell.py"
 source activate cuda11_env
 
 python -u $pyScript -onto $ontfile -gene2id $gene2idfile -cell2id $cell2idfile \
-	-train $traindatafile -genotype $mutationfile -std $stdfile -result $resultfile \
-	-model $modeldir -genotype_hiddens 2 -lr 0.0005 -wd 0.0001 -alpha 0.2 -cuda $cudaid \
-	-batchsize 100 -epoch 30 -optimize 1 -zscore_method $zscore_method > "${modeldir}/train.log"
+	-train $traindatafile -genotype $mutationfile -std $stdfile -model $modeldir \
+	-genotype_hiddens 2 -lr 0.0005 -wd 0.0001 -alpha 0.2 -cuda $cudaid -epoch 30 \
+	-batchsize 100 -optimize 1 -zscore_method $zscore_method > "${modeldir}/train.log"
