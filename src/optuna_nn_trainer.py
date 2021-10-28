@@ -98,8 +98,10 @@ class OptunaNNTrainer(NNTrainer):
 					# loss = nn.MSELoss()
 					loss = nn.CrossEntropyLoss(weight=class_weights)
 					if name == 'final':
+						# total_loss += loss(output, cuda_labels)
 						total_loss += loss(output, cuda_labels.squeeze().long())
 					else:
+						total_loss += loss(output, cuda_labels)
 						total_loss += self.data_wrapper.alpha * loss(output, cuda_labels.squeeze().long())
 				total_loss.backward()
 
