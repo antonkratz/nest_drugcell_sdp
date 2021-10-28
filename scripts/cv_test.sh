@@ -1,13 +1,23 @@
 #!/bin/bash
 homedir=$1
 zscore_method=$5
+class=$7
 
 gene2idfile="${homedir}/data/gene2ind_${2}_${3}.txt"
 cell2idfile="${homedir}/data/cell2ind_${3}.txt"
 mutationfile="${homedir}/data/cell2mutation_${2}_${3}.txt"
-testdatafile="${homedir}/data/training_files/${6}_test_${3}_${4}.txt"
 
-modeldir="${homedir}/models/model_${3}_${4}_${5}_${6}"
+if [ $class == "" ]; then
+	testdatafile="${homedir}/data/training_files/${6}_test_${3}_${4}.txt"
+	modeldir="${homedir}/models/model_${3}_${4}_${5}_${6}"
+elif [ $class == "ord" ]; then
+	testdatafile="${homedir}/data/training_files/${6}_test.${3}.${4}.${class}.txt"
+	modeldir="${homedir}/models/model_${3}_${4}_${5}_${6}_${class}"
+elif [ $class == "onehot" ]; then
+	testdatafile="${homedir}/data/training_files/${6}_test.${3}.${4}.${class}.txt"
+	modeldir="${homedir}/models/model_${3}_${4}_${5}_${6}_${class}"
+fi
+
 modelfile="${modeldir}/model_final.pt"
 
 stdfile="${modeldir}/std.txt"
