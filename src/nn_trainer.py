@@ -82,7 +82,7 @@ class NNTrainer():
 				total_loss = 0
 				for name, output in aux_out_map.items():
 					# loss = nn.MSELoss()
-					loss = nn.CrossEntropyLoss(weight=class_weights) # Classification
+					loss = nn.CrossEntropyLoss(weight=class_weights.cuda(self.data_wrapper.cuda)) # Classification
 					if name == 'final':
 						# total_loss += loss(output, cuda_labels)
 						total_loss += loss(output, cuda_labels.squeeze().long())
@@ -126,7 +126,7 @@ class NNTrainer():
 				val_loss = 0
 				for name, output in aux_out_map.items():
 					# loss = nn.MSELoss()
-					loss = nn.CrossEntropyLoss(weight=class_weights)
+					loss = nn.CrossEntropyLoss(weight=class_weights.cuda(self.data_wrapper.cuda))
 					if name == 'final':
 						# val_loss += loss(output, cuda_labels)
 						val_loss += loss(output, cuda_labels.squeeze().long())

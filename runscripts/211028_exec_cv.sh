@@ -11,8 +11,8 @@ drugs=`awk 'BEGIN {print $1}' "${homedir}/data/drugname_${dataset}.txt"`
 
 for ont in ctg
 do
-	# for drug in "palbociclib" "nutlin-3a" "paclitaxel" "trametinib" "dabrafenib" "vincristine" "sorafenib" "docetaxel" "epirubicin" "cediranib"
-	for drug in "palbociclib"
+	for drug in "palbociclib" "nutlin-3a" "paclitaxel" "trametinib" "dabrafenib" "vincristine" "sorafenib" "docetaxel" "epirubicin" "cediranib"
+	# for drug in "palbociclib"
 	do
 		for ((i=1;i<=folds;i++));
 		do

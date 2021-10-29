@@ -3,7 +3,6 @@
 #SBATCH --output=slurm-%A.out
 #SBATCH --partition=nrnb-gpu
 #SBATCH --account=nrnb-gpu
-#SBATCH --gres=gpu:1
 #SBATCH --mem=16G
 #SBATCH --dependency=singleton
 

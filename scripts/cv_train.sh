@@ -45,7 +45,7 @@ elif [ $class == "ord" ]; then
 	python -u $pyScript -onto $ontfile -gene2id $gene2idfile -cell2id $cell2idfile \
 	-train $traindatafile -genotype $mutationfile -std $stdfile -model $modeldir \
 	-genotype_hiddens 2 -lr 0.0005 -wd 0.0001 -alpha 0.2 -cuda $cudaid -epoch 50 \
-	-batchsize 100 -optimize 0 -n_classes 3 > "${modeldir}/train.log"
+	-batchsize 100 -optimize 2 -n_classes 3 > "${modeldir}/train.log"
 elif [ $class == "onehot" ]; then
 	python -u $pyScript -onto $ontfile -gene2id $gene2idfile -cell2id $cell2idfile \
 	-train $traindatafile -genotype $mutationfile -std $stdfile -model $modeldir \
