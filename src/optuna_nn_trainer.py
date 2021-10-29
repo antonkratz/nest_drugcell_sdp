@@ -22,7 +22,7 @@ class OptunaNNTrainer():
 
 	def exec_study(self):
 		study = optuna.create_study(direction="maximize")
-		study.optimize(self.train_model, n_trials=50)
+		study.optimize(self.train_model, n_trials=100)
 		return self.print_result(study)
 
 
@@ -30,9 +30,9 @@ class OptunaNNTrainer():
 
 		self.data_wrapper.genotype_hiddens = trial.suggest_categorical("genotype_hiddens", [1, 2, 4, 6, 8, 10])
 		self.data_wrapper.lr = trial.suggest_float("lr", 1e-4, 5e-1, log=True)
-		self.data_wrapper.wd = trial.suggest_float("wd", 5e-5, 1e-1, log=True)
-		#self.data_wrapper.alpha = trial.suggest_categorical("alpha", [0.2, 0.4, 0.6, 0.8, 1.0])
-		#self.data_wrapper.batchsize = trial.suggest_categorical("batchsize", [32, 64, 96, 128])
+		# self.data_wrapper.wd = trial.suggest_float("wd", 5e-5, 1e-1, log=True)
+		self.data_wrapper.alpha = trial.suggest_categorical("alpha", [0.2, 0.4, 0.6, 0.8, 1.0])
+		self.data_wrapper.batchsize = trial.suggest_categorical("batchsize", [32, 64, 96, 128])
 
 		for key, value in trial.params.items():
 			print("{}: {}".format(key, value))
@@ -71,7 +71,7 @@ class OptunaNNTrainer():
 		# train_loader = du.DataLoader(du.TensorDataset(train_feature, train_label), batch_size=self.data_wrapper.batchsize, shuffle=True, sampler=sampler)
 		val_loader = du.DataLoader(du.TensorDataset(val_feature, val_label), batch_size=self.data_wrapper.batchsize, shuffle=True)
 
-		optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.data_wrapper.lr, betas=(0.9, 0.99), eps=1e-05, weight_decay=self.data_wrapper.wd)
+		optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.data_wrapper.lr, betas=(0.9, 0.99), eps=1e-05, weight_decay=self.data_wrapper.lr/2)
 		optimizer.zero_grad()
 
 		print("epoch\ttrain_corr\ttrain_loss\ttrue_auc\tpred_auc\tval_corr\tval_loss\telapsed_time")

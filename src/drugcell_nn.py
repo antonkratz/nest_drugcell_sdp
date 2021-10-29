@@ -1,8 +1,10 @@
 import sys
 import os
+import copy
 import numpy as np
 import torch
 import torch.nn as nn
+
 
 from training_data_wrapper import *
 
@@ -28,7 +30,8 @@ class DrugCellNN(nn.Module):
 
 		# add modules for neural networks to process genotypes
 		self.contruct_direct_gene_layer()
-		self.construct_NN_graph(data_wrapper.dG)
+		self.construct_NN_graph(copy.deepcopy(data_wrapper.dG))
+
 
 		# add module for final layer
 		# self.add_module('final_linear_layer_output', nn.Linear(1, 1))
