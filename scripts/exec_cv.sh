@@ -12,9 +12,9 @@ for ont in ctg
 do
 	for drug in "Palbociclib" "nutlin-3A" "paclitaxel" "Trametinib" "Dabrafenib" "vincristine" "Sorafenib" "docetaxel" "Epirubicin" "Cediranib"
 	do
+        bash "${homedir}/scripts/create_cv_data.sh" $homedir $dataset $drug $folds
 		for ((i=1;i<=folds;i++));
 		do
-			bash "${homedir}/scripts/create_cv_data.sh" $homedir $dataset $drug $folds $i
 			sbatch -J "NDC_${ont}_${drug}_${i}" -o "${homedir}/logs/out_${ont}_${drug}_${i}.log" ${homedir}/scripts/cv_batch.sh $homedir $ont $dataset $drug ${zscore_method} $i
         done
 	done
