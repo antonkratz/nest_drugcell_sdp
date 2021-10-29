@@ -10,14 +10,14 @@ import optuna
 from optuna.trial import TrialState
 
 import util
-from nn_trainer import *
 from training_data_wrapper import *
+from drugcell_nn import *
 
 
-class OptunaNNTrainer(NNTrainer):
+class OptunaNNTrainer():
 
 	def __init__(self, opt):
-		super().__init__(opt)
+		self.data_wrapper = TrainingDataWrapper(opt)
 
 
 	def exec_study(self):
@@ -44,6 +44,9 @@ class OptunaNNTrainer(NNTrainer):
 		max_corr = 0
 
 		self.setup_trials(trial)
+
+		self.model = DrugCellNN(self.data_wrapper)
+		self.model.cuda(self.data_wrapper.cuda)
 
 		train_feature, train_label, val_feature, val_label = self.data_wrapper.prepare_train_data()
 		# train_feature, train_label, val_feature, val_label, sample_weights, class_weights = self.data_wrapper.prepare_train_data()
