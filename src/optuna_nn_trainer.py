@@ -97,11 +97,14 @@ class OptunaNNTrainer():
 					train_predict = torch.cat([train_predict, aux_out_map['final'].data], dim=0)
 
 				total_loss = 0
+				print(aux_out_map)
 				for name, output in aux_out_map.items():
 					# loss = nn.MSELoss()
 					loss = nn.CrossEntropyLoss(weight=class_weights)
 					if name == 'final':
 						# total_loss += loss(output, cuda_labels)
+						print(output)
+						print(cuda_labels)
 						total_loss += loss(output, cuda_labels.squeeze().long())
 					else:
 						# total_loss += loss(output, cuda_labels)

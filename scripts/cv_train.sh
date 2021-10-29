@@ -14,10 +14,10 @@ if [ $class == "" ]; then
 	traindatafile="${homedir}/data/training_files/${6}_train_${3}_${4}.txt"
 	modeldir="${homedir}/models/model_${3}_${4}_${5}_${6}"
 elif [ $class == "ord" ]; then
-	traindatafile="${homedir}/data/training_files/${6}_train.${3}.${4}.${class}.txt"
+	traindatafile="${homedir}/data/class/training_files/${6}_train.${3}.${4}.${class}.txt"
 	modeldir="${homedir}/models/model_${3}_${4}_${5}_${6}_${class}"
 elif [ $class == "onehot" ]; then
-	traindatafile="${homedir}/data/training_files/${6}_train.${3}.${4}.${class}.txt"
+	traindatafile="${homedir}/data/class/training_files/${6}_train.${3}.${4}.${class}.txt"
 	modeldir="${homedir}/models/model_${3}_${4}_${5}_${6}_${class}"
 fi
 
@@ -45,7 +45,7 @@ elif [ $class == "ord" ]; then
 	python -u $pyScript -onto $ontfile -gene2id $gene2idfile -cell2id $cell2idfile \
 	-train $traindatafile -genotype $mutationfile -std $stdfile -model $modeldir \
 	-genotype_hiddens 2 -lr 0.0005 -wd 0.0001 -alpha 0.2 -cuda $cudaid -epoch 50 \
-	-batchsize 100 -optimize 2 -n_classes 3 > "${modeldir}/train.log"
+	-batchsize 100 -optimize 0 -n_classes 3 > "${modeldir}/train.log"
 elif [ $class == "onehot" ]; then
 	python -u $pyScript -onto $ontfile -gene2id $gene2idfile -cell2id $cell2idfile \
 	-train $traindatafile -genotype $mutationfile -std $stdfile -model $modeldir \

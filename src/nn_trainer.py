@@ -42,10 +42,10 @@ class NNTrainer():
 			else:
 				param.data = param.data * 0.1
 
-		train_label_gpu = Variable(train_label.cuda(self.data_wrapper.cuda))
-		val_label_gpu = Variable(val_label.cuda(self.data_wrapper.cuda))
-		# train_label_gpu = Variable(train_label)
-		# val_label_gpu = Variable(val_label)
+		# train_label_gpu = Variable(train_label.cuda(self.data_wrapper.cuda))
+		# val_label_gpu = Variable(val_label.cuda(self.data_wrapper.cuda))
+		train_label_gpu = Variable(train_label)
+		val_label_gpu = Variable(val_label)
 
 		train_loader = du.DataLoader(du.TensorDataset(train_feature, train_label), batch_size=self.data_wrapper.batchsize, shuffle=True)
 		val_loader = du.DataLoader(du.TensorDataset(val_feature, val_label), batch_size=self.data_wrapper.batchsize, shuffle=True)
@@ -64,8 +64,10 @@ class NNTrainer():
 			for i, (inputdata, labels) in enumerate(train_loader):
 				# Convert torch tensor to Variable
 				features = util.build_input_vector(inputdata, self.data_wrapper.cell_features)
-				cuda_features = Variable(features)
-				cuda_labels = Variable(labels)
+				cuda_features = Variable(features.cuda(self.data_wrapper.cuda))
+				cuda_labels = Variable(labels.cuda(self.data_wrapper.cuda))
+				# cuda_features = Variable(features)
+				# cuda_labels = Variable(labels)
 
 				# Forward + Backward + Optimize
 				optimizer.zero_grad()  # zero the gradient buffer
@@ -110,8 +112,8 @@ class NNTrainer():
 				# Convert torch tensor to Variable
 				features = util.build_input_vector(inputdata, self.data_wrapper.cell_features)
 				cuda_features = Variable(features.cuda(self.data_wrapper.cuda))
-				# cuda_features = Variable(features)
 				cuda_labels = Variable(labels.cuda(self.data_wrapper.cuda))
+				# cuda_features = Variable(features)
 				# cuda_labels = Variable(labels)
 
 				aux_out_map, _ = self.model(cuda_features)
@@ -146,6 +148,5 @@ class NNTrainer():
 			pred_auc = torch.median(train_predict)
 			print("{}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}\t{:.4f}".format(epoch, train_corr, total_loss, true_auc, pred_auc, val_corr, val_loss, epoch_end_time - epoch_start_time))
 			epoch_start_time = epoch_end_time
-
 
 		return max_corr
