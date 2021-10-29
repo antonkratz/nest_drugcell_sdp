@@ -42,8 +42,6 @@ class NNTrainer():
 		optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.data_wrapper.lr, betas=(0.9, 0.99), eps=1e-05, weight_decay=self.data_wrapper.wd)
 		optimizer.zero_grad()
 
-		self.term_feature_variance_map = {} # Map of term -> list of variance of every gene part of that term
-
 		for epoch in range(self.data_wrapper.epochs):
 			# Train
 			self.model.train()
@@ -82,8 +80,6 @@ class NNTrainer():
 
 				optimizer.step()
 
-				self.update_variance(term_mask_map)
-
 			train_corr = util.pearson_corr(train_predict, train_label_gpu)
 			#train_corr = util.get_drug_corr_median(train_predict, train_label_gpu, train_feature)
 
@@ -114,58 +110,4 @@ class NNTrainer():
 			print("epoch {}\ttrain_corr {:.5f}\tval_corr {:.5f}\ttotal_loss {:.3f}\telapsed_time {}".format(epoch, train_corr, val_corr, total_loss, epoch_end_time - epoch_start_time))
 			epoch_start_time = epoch_end_time
 
-		self.finalize_variance()
-		variance_map, viann_score_map, viann_freq_map = self.calc_feature_importance(term_mask_map)
-		viann_score_map = {g:sc for g,sc in sorted(viann_score_map.items(), key=lambda item:item[1], reverse=True)}
-		mutations_per_gene = np.count_nonzero(self.data_wrapper.cell_features.transpose()==1, axis=1)
-		for g, score in viann_score_map.items():
-			mut_freq = mutations_per_gene[self.data_wrapper.gene_id_mapping[g]]
-			print("Gene {}\tMutations {:.0f}\tMean_Var {:.2e}\tMean_VIANN {:.2e}\tT_Var {:.2e}\tT_VIANN {:.2e}".format(g, mut_freq, variance_map[g]/viann_freq_map[g], score/viann_freq_map[g], variance_map[g], score))
-
 		return max_corr
-
-
-	# Update Variance of every gene per term using Welford's online method
-	def update_variance(self, term_mask_map):
-		model_weights_map = self.model.get_model_weights(term_mask_map, '_direct_gene_layer.weight')
-		for term, term_weights in model_weights_map.items():
-			feature_welford_set_list = [(0, 0.0, 0.0)] * len(term_weights)
-			for i, weight in enumerate(term_weights):
-				if term in self.term_feature_variance_map:
-					feature_welford_set_list = self.term_feature_variance_map[term]
-				feature_welford_set_list[i] = util.update_variance(feature_welford_set_list[i], weight)
-			self.term_feature_variance_map[term] = feature_welford_set_list
-
-
-	# Calculate variance for every gene per term
-	def finalize_variance(self):
-		for term, feature_welford_set_list in self.term_feature_variance_map.items():
-			feature_variance_list = torch.zeros(len(feature_welford_set_list)).cuda(self.data_wrapper.cuda)
-			for i, elem in enumerate(feature_welford_set_list):
-				(n, mean, M2) = elem
-				feature_variance_list[i] = M2/n
-			self.term_feature_variance_map[term] = feature_variance_list
-
-
-	# Calculate VIANN score for every gene; VIANN score = sum(Variance x final weight)
-	def calc_feature_importance(self, term_mask_map):
-
-		viann_scores = torch.zeros(self.model.gene_dim).cuda(self.data_wrapper.cuda) # List of VIANN scores of every gene; each entry contains the sum of weighted variance
-		viann_freq = torch.zeros(self.model.gene_dim).cuda(self.data_wrapper.cuda)   # No of VIANN scores of every gene = No of subsystems containing that gene
-		variance_sum = torch.zeros(self.model.gene_dim).cuda(self.data_wrapper.cuda) # List of sum of variance of every gene
-		final_weights_map = self.model.get_model_weights(term_mask_map, '_direct_gene_layer.weight')
-		for term, final_term_weights in final_weights_map.items():
-			feature_variance_list = self.term_feature_variance_map[term]
-			weighted_variance_list = torch.mul(torch.abs(final_term_weights), feature_variance_list)
-			for i, gene_id in enumerate(self.model.term_direct_gene_map[term]):
-				variance_sum[gene_id] += feature_variance_list[i]
-				viann_scores[gene_id] += weighted_variance_list[i]
-				viann_freq[gene_id] += 1
-		viann_score_map = {}
-		variance_map = {}
-		viann_freq_map = {}
-		for i, gene in enumerate(self.data_wrapper.gene_id_mapping.keys()):
-			variance_map[gene] = variance_sum[i].item()
-			viann_score_map[gene] = viann_scores[i].item()
-			viann_freq_map[gene] = int(viann_freq[i].item())
-		return variance_map, viann_score_map, viann_freq_map

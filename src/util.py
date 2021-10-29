@@ -163,17 +163,6 @@ def create_term_mask(term_direct_gene_map, gene_dim, cuda_id):
 	return term_mask_map
 
 
-# Update variance for every weight using Welford's online algorithm
-def update_variance(welford_set, new_weight):
-	(n, mean, M2) = welford_set
-	n += 1
-	delta = abs(new_weight - mean)
-	mean += delta/n
-	delta2 = abs(new_weight - mean)
-	M2 += delta * delta2
-	return (n, mean, M2)
-
-
 def get_grad_norm(model_params, norm_type):
 	"""Gets gradient norm of an iterable of model_params.
 	The norm is computed over all gradients together, as if they were
